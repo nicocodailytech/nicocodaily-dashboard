@@ -6,8 +6,7 @@
   <title>NICOCODAILY · JARVIS</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,600;0,700;1,300&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/3d-force-graph@1.73.4/dist/3d-force-graph.min.js"></script>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
   <style>
     :root {
       --bg:        #020812;
@@ -433,6 +432,8 @@
       overflow: hidden;
       display: flex;
       flex-direction: column;
+      perspective: 1800px;
+      perspective-origin: 50% 50%;
     }
 
     .graph-toolbar {
@@ -462,13 +463,47 @@
       box-shadow: 0 0 10px rgba(0,212,255,0.3);
     }
 
-    #graph-3d {
+    #graph-svg {
       width: 100%;
       height: 100%;
       flex: 1;
-      position: relative;
+      transform-style: preserve-3d;
+      transform-origin: 50% 50%;
+      will-change: transform;
+      cursor: grab;
+      user-select: none;
     }
-    #graph-3d canvas { display: block; }
+    #graph-svg.dragging { cursor: grabbing; }
+
+    /* Rotation control panel */
+    .rot-panel {
+      position: absolute;
+      top: 12px; right: 12px;
+      z-index: 10;
+      background: rgba(2,8,18,0.85);
+      border: 1px solid var(--border-glow);
+      border-radius: 6px;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 9px;
+      color: var(--text-dim);
+      letter-spacing: 0.04em;
+    }
+    .rot-panel button {
+      background: none;
+      border: 1px solid var(--border-glow);
+      color: var(--cyan);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .rot-panel button:hover { background: rgba(0,212,255,0.1); box-shadow: 0 0 8px rgba(0,212,255,0.3); }
+    .rot-panel .rot-readout { font-variant-numeric: tabular-nums; color: var(--text); }
 
     .graph-legend {
       position: absolute;
@@ -795,7 +830,13 @@
       <button class="gtool-btn" id="btn-systems" onclick="setFilter('systems')">系統</button>
     </div>
 
-    <div id="graph-3d"></div>
+    <svg id="graph-svg"></svg>
+
+    <div class="rot-panel">
+      <span>VIEW <span class="rot-readout" id="rot-readout">X:20° Y:0°</span></span>
+      <button onclick="resetRotation()">RESET 視角</button>
+      <button onclick="toggleAutoRotate()" id="autorot-btn">▶ 自轉</button>
+    </div>
 
     <div class="graph-legend">
       <div class="legend-item"><div class="legend-dot" style="background:#00d4ff"></div>Agent</div>
@@ -807,8 +848,8 @@
     </div>
 
     <div class="graph-info" id="graph-info">
-      <strong>3D 節點關係圖</strong>
-      左鍵拖曳旋轉 · 滾輪縮放 · 右鍵平移 · 懸停查看詳情
+      <strong>節點關係圖</strong>
+      Shift+拖曳 = 轉視角 · 直接拖曳節點 = 移動位置 · 懸停查看詳情
     </div>
   </div>
 
@@ -1097,197 +1138,288 @@ async function loadData() {
 }
 
 // ═══════════════════════════════════════════════════
-// 3D FORCE GRAPH (three.js + 3d-force-graph)
+// D3 FORCE GRAPH
 // ═══════════════════════════════════════════════════
-let Graph3D = null;
-let currentFilter = 'all';
+let simulation, currentFilter = 'all';
 
 function setFilter(f) {
   currentFilter = f;
   ['all','active','agents','systems'].forEach(k => {
     document.getElementById('btn-'+k).classList.toggle('active', k === f);
   });
-  refreshGraphData();
+  updateGraph();
 }
 
-function getVisibleData() {
+function getVisibleNodes() {
   let nodes = GRAPH_NODES;
   if (currentFilter === 'active')  nodes = nodes.filter(n => n.type === 'agent' || n.status === '運行中');
   if (currentFilter === 'agents')  nodes = nodes.filter(n => n.type === 'agent' || n.type === 'system');
   if (currentFilter === 'systems') nodes = nodes.filter(n => n.type === 'system' || n.type === 'agent');
-
-  const ids = new Set(nodes.map(n => n.id));
-  const links = GRAPH_LINKS
-    .filter(l => ids.has(l.source) && ids.has(l.target))
-    .map(l => ({ ...l }));
-
-  return { nodes: nodes.map(n => ({ ...n })), links };
-}
-
-// Create a sphere with glowing halo as the node visual
-function makeNodeObject(node) {
-  const group = new THREE.Group();
-  const baseR = node.r * 0.5;
-
-  // Core sphere
-  const coreMat = new THREE.MeshBasicMaterial({
-    color: node.color,
-    transparent: true,
-    opacity: node.type === 'system' ? 0.7 : 0.95,
-  });
-  const core = new THREE.Mesh(new THREE.SphereGeometry(baseR, 24, 24), coreMat);
-  group.add(core);
-
-  // Glow halo (additive)
-  const glowMat = new THREE.MeshBasicMaterial({
-    color: node.color,
-    transparent: true,
-    opacity: node.type === 'agent' ? 0.35 : 0.18,
-    blending: THREE.AdditiveBlending,
-    depthWrite: false,
-  });
-  const glow = new THREE.Mesh(new THREE.SphereGeometry(baseR * 1.6, 16, 16), glowMat);
-  group.add(glow);
-
-  // Outer ring for agents
-  if (node.type === 'agent') {
-    const ringMat = new THREE.MeshBasicMaterial({
-      color: node.color, transparent: true, opacity: 0.4,
-      side: THREE.DoubleSide, blending: THREE.AdditiveBlending,
-    });
-    const ring = new THREE.Mesh(new THREE.RingGeometry(baseR * 1.9, baseR * 2.05, 32), ringMat);
-    group.add(ring);
-  }
-
-  // Text label (sprite — always faces camera)
-  const cv = document.createElement('canvas');
-  const ctx = cv.getContext('2d');
-  cv.width = 256; cv.height = 80;
-  ctx.font = "bold 22px 'JetBrains Mono', monospace";
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = node.type === 'agent' ? '#d8f0ff' :
-                  node.type === 'system' ? '#7090b0' : node.color;
-  ctx.shadowColor = node.color;
-  ctx.shadowBlur = 8;
-  const lines = node.label.split('\n');
-  lines.forEach((line, i) => {
-    ctx.fillText(line, 128, 40 - (lines.length - 1) * 14 + i * 28);
-  });
-  const tex = new THREE.CanvasTexture(cv);
-  tex.minFilter = THREE.LinearFilter;
-  const spriteMat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false });
-  const sprite = new THREE.Sprite(spriteMat);
-  sprite.scale.set(16, 5, 1);
-  sprite.position.set(0, baseR + 4, 0);
-  group.add(sprite);
-
-  return group;
+  return nodes;
 }
 
 function initGraph() {
-  const el = document.getElementById('graph-3d');
-  if (!el) return;
+  const svg = d3.select('#graph-svg');
+  svg.selectAll('*').remove();
 
-  Graph3D = ForceGraph3D()(el)
-    .backgroundColor('#040d1e')
-    .showNavInfo(false)
-    .nodeRelSize(4)
-    .nodeOpacity(1)
-    .nodeThreeObject(makeNodeObject)
-    .nodeLabel(() => '')   // disable default tooltip — we use our own
-    .linkColor(link => {
-      const srcType = (typeof link.source === 'object' ? link.source.type : null) ||
-                      (GRAPH_NODES.find(n => n.id === link.source) || {}).type;
-      return srcType === 'agent' ? '#1a6fff' : '#0d2040';
+  const W = svg.node().clientWidth || 600;
+  const H = svg.node().clientHeight || 500;
+
+  // Defs: arrow marker, glow filter
+  const defs = svg.append('defs');
+
+  defs.append('marker')
+    .attr('id', 'arrow')
+    .attr('viewBox', '0 -4 8 8')
+    .attr('refX', 20).attr('refY', 0)
+    .attr('markerWidth', 6).attr('markerHeight', 6)
+    .attr('orient', 'auto')
+    .append('path')
+    .attr('d', 'M0,-4L8,0L0,4')
+    .attr('fill', '#1a4080');
+
+  const glow = defs.append('filter').attr('id', 'glow');
+  glow.append('feGaussianBlur').attr('stdDeviation', 3).attr('result', 'blur');
+  const feMerge = glow.append('feMerge');
+  feMerge.append('feMergeNode').attr('in', 'blur');
+  feMerge.append('feMergeNode').attr('in', 'SourceGraphic');
+
+  const glowStrong = defs.append('filter').attr('id', 'glow-strong');
+  glowStrong.append('feGaussianBlur').attr('stdDeviation', 6).attr('result', 'blur');
+  const feMerge2 = glowStrong.append('feMerge');
+  feMerge2.append('feMergeNode').attr('in', 'blur');
+  feMerge2.append('feMergeNode').attr('in', 'SourceGraphic');
+
+  const container = svg.append('g').attr('class', 'graph-container');
+
+  // Zoom
+  svg.call(d3.zoom()
+    .scaleExtent([0.3, 3])
+    .on('zoom', e => container.attr('transform', e.transform))
+  );
+
+  updateGraph(container, W, H);
+}
+
+function updateGraph(container, W, H) {
+  const svg = d3.select('#graph-svg');
+  if (!container) container = svg.select('.graph-container');
+  if (!W) W = svg.node().clientWidth || 600;
+  if (!H) H = svg.node().clientHeight || 500;
+
+  const visibleNodes = getVisibleNodes();
+  const visibleIds = new Set(visibleNodes.map(n => n.id));
+  const visibleLinks = GRAPH_LINKS.filter(l =>
+    visibleIds.has(l.source.id || l.source) &&
+    visibleIds.has(l.target.id || l.target)
+  );
+
+  // Stop existing simulation
+  if (simulation) simulation.stop();
+
+  // Create node objects preserving positions
+  const nodeMap = {};
+  GRAPH_NODES.forEach(n => { nodeMap[n.id] = n; });
+
+  const nodes = visibleNodes.map(n => ({ ...n }));
+  const links = visibleLinks.map(l => ({
+    ...l,
+    source: l.source.id || l.source,
+    target: l.target.id || l.target,
+  }));
+
+  simulation = d3.forceSimulation(nodes)
+    .force('link', d3.forceLink(links).id(d => d.id).distance(d => {
+      if (d.source.type === 'agent' && d.target.type === 'agent') return 100;
+      if (d.source.type === 'agent' || d.target.type === 'agent') return 90;
+      return 70;
+    }).strength(0.6))
+    .force('charge', d3.forceManyBody().strength(d => d.type === 'agent' ? -200 : -80))
+    .force('center', d3.forceCenter(W/2, H/2))
+    .force('collision', d3.forceCollide(d => d.r + 14))
+    .alphaDecay(0.02);
+
+  // Clear and redraw
+  container.selectAll('.links-g').remove();
+  container.selectAll('.nodes-g').remove();
+
+  const linksG = container.append('g').attr('class', 'links-g');
+  const nodesG = container.append('g').attr('class', 'nodes-g');
+
+  const link = linksG.selectAll('line')
+    .data(links)
+    .join('line')
+    .attr('stroke', d => {
+      const src = d.source.type || '';
+      if (src === 'agent') return '#1a4080';
+      return '#0d2040';
     })
-    .linkOpacity(0.4)
-    .linkWidth(link => {
-      const srcType = (typeof link.source === 'object' ? link.source.type : null) ||
-                      (GRAPH_NODES.find(n => n.id === link.source) || {}).type;
-      return srcType === 'agent' ? 0.6 : 0.3;
-    })
-    .linkDirectionalArrowLength(2.5)
-    .linkDirectionalArrowRelPos(0.92)
-    .linkDirectionalArrowColor(() => '#1a4080')
-    .linkDirectionalParticles(link => {
-      const srcType = (typeof link.source === 'object' ? link.source.type : null) ||
-                      (GRAPH_NODES.find(n => n.id === link.source) || {}).type;
-      return srcType === 'agent' ? 2 : 0;
-    })
-    .linkDirectionalParticleSpeed(0.006)
-    .linkDirectionalParticleWidth(1.2)
-    .linkDirectionalParticleColor(() => '#00d4ff')
-    .onNodeHover(node => {
-      const tooltip = document.getElementById('tooltip');
-      if (!node) { tooltip.style.display = 'none'; el.style.cursor = 'grab'; return; }
-      el.style.cursor = 'pointer';
-      let info = `<strong>${node.label.replace('\n', ' ')}</strong>`;
-      if (node.type === 'agent')   info += `<div class="tt-sub">Agent · ${node.level || ''}</div>`;
-      if (node.type === 'project') info += `<div class="tt-sub">狀態: ${node.status}</div>`;
-      if (node.type === 'system')  info += `<div class="tt-sub">外部系統</div>`;
-      if (node.type === 'project') {
-        const pid = parseInt(node.id.replace('p',''));
-        const pm = PROJECT_META[pid];
-        if (pm) {
-          info += `<div class="tt-sub">模組 ${pm.module}% · 整合 ${pm.integ}%</div>`;
-          info += `<div class="tt-sub">${pm.executor}</div>`;
-        }
+    .attr('stroke-width', d => d.source.type === 'agent' ? 1.5 : 0.8)
+    .attr('stroke-opacity', 0.6)
+    .attr('marker-end', 'url(#arrow)');
+
+  const tooltip = document.getElementById('tooltip');
+
+  const node = nodesG.selectAll('g')
+    .data(nodes)
+    .join('g')
+    .attr('class', 'node')
+    .style('cursor', 'pointer')
+    .call(d3.drag()
+      .on('start', (event, d) => {
+        if (!event.active) simulation.alphaTarget(0.3).restart();
+        d.fx = d.x; d.fy = d.y;
+      })
+      .on('drag', (event, d) => { d.fx = event.x; d.fy = event.y; })
+      .on('end', (event, d) => {
+        if (!event.active) simulation.alphaTarget(0);
+        d.fx = null; d.fy = null;
+      })
+    )
+    .on('mouseover', (event, d) => {
+      tooltip.style.display = 'block';
+      let info = `<strong>${d.label.replace('\n', ' ')}</strong>`;
+      if (d.type === 'agent')   info += `<div class="tt-sub">Agent · ${d.level || ''}</div>`;
+      if (d.type === 'project') info += `<div class="tt-sub">狀態: ${d.status}</div>`;
+      if (d.type === 'system')  info += `<div class="tt-sub">外部系統</div>`;
+      if (d.type === 'project' && PROJECT_META[parseInt(d.id.replace('p',''))]) {
+        const pm = PROJECT_META[parseInt(d.id.replace('p',''))];
+        info += `<div class="tt-sub">模組 ${pm.module}% · 整合 ${pm.integ}%</div>`;
+        info += `<div class="tt-sub">${pm.executor}</div>`;
       }
       tooltip.innerHTML = info;
-      tooltip.style.display = 'block';
     })
-    .onNodeClick(node => {
-      // Focus camera on clicked node
-      const distance = 80;
-      const distRatio = 1 + distance / Math.hypot(node.x || 1, node.y || 1, node.z || 1);
-      Graph3D.cameraPosition(
-        { x: (node.x || 0) * distRatio, y: (node.y || 0) * distRatio, z: (node.z || 0) * distRatio },
-        node,
-        1200
-      );
+    .on('mousemove', (event) => {
+      tooltip.style.left = (event.clientX + 14) + 'px';
+      tooltip.style.top  = (event.clientY - 10) + 'px';
+    })
+    .on('mouseout', () => { tooltip.style.display = 'none'; });
+
+  // Circles
+  node.append('circle')
+    .attr('r', d => d.r)
+    .attr('fill', d => {
+      if (d.type === 'agent') return 'rgba(0,180,220,0.1)';
+      if (d.type === 'project') return d.color + '18';
+      return 'rgba(58,80,112,0.15)';
+    })
+    .attr('stroke', d => d.color)
+    .attr('stroke-width', d => d.type === 'agent' ? 1.5 : 1)
+    .attr('filter', d => d.type === 'agent' ? 'url(#glow-strong)' : (d.status === '運行中' ? 'url(#glow)' : 'none'));
+
+  // Pulse ring for agents
+  node.filter(d => d.type === 'agent')
+    .append('circle')
+    .attr('r', d => d.r + 5)
+    .attr('fill', 'none')
+    .attr('stroke', d => d.color)
+    .attr('stroke-width', 0.5)
+    .attr('stroke-opacity', 0.3)
+    .attr('stroke-dasharray', '3,3');
+
+  // Labels
+  node.append('text')
+    .attr('text-anchor', 'middle')
+    .attr('dominant-baseline', 'central')
+    .attr('fill', d => d.type === 'agent' ? '#d8f0ff' : d.type === 'system' ? '#3a5070' : d.color)
+    .attr('font-family', "'JetBrains Mono', monospace")
+    .attr('font-size', d => d.type === 'agent' ? 9 : 8)
+    .attr('font-weight', d => d.type === 'agent' ? '700' : '400')
+    .each(function(d) {
+      const lines = d.label.split('\n');
+      const el = d3.select(this);
+      if (lines.length === 1) {
+        el.text(lines[0]);
+      } else {
+        el.append('tspan').attr('x', 0).attr('dy', '-0.5em').text(lines[0]);
+        el.append('tspan').attr('x', 0).attr('dy', '1.1em').text(lines[1]);
+      }
     });
 
-  // Track tooltip with mouse
-  el.addEventListener('mousemove', (e) => {
-    const tooltip = document.getElementById('tooltip');
-    if (tooltip.style.display === 'block') {
-      tooltip.style.left = (e.clientX + 14) + 'px';
-      tooltip.style.top  = (e.clientY - 10) + 'px';
+  simulation.on('tick', () => {
+    link
+      .attr('x1', d => d.source.x)
+      .attr('y1', d => d.source.y)
+      .attr('x2', d => d.target.x)
+      .attr('y2', d => d.target.y);
+
+    node.attr('transform', d => `translate(${d.x},${d.y})`);
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// GRAPH ROTATION (CSS 3D perspective)
+// ═══════════════════════════════════════════════════
+let rotX = 20, rotY = 0;
+let autoRotate = false;
+let autoRotateRAF = null;
+
+function applyRotation() {
+  const svg = document.getElementById('graph-svg');
+  if (!svg) return;
+  svg.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+  const readout = document.getElementById('rot-readout');
+  if (readout) readout.textContent = `X:${Math.round(rotX)}° Y:${Math.round(rotY)}°`;
+}
+
+function resetRotation() {
+  rotX = 20; rotY = 0;
+  applyRotation();
+}
+
+function toggleAutoRotate() {
+  autoRotate = !autoRotate;
+  document.getElementById('autorot-btn').textContent = autoRotate ? '■ 停止' : '▶ 自轉';
+  if (autoRotate) {
+    const tick = () => {
+      if (!autoRotate) return;
+      rotY = (rotY + 0.25) % 360;
+      applyRotation();
+      autoRotateRAF = requestAnimationFrame(tick);
+    };
+    tick();
+  } else {
+    if (autoRotateRAF) cancelAnimationFrame(autoRotateRAF);
+  }
+}
+
+function initRotationDrag() {
+  const svg = document.getElementById('graph-svg');
+  if (!svg) return;
+
+  let isDragging = false;
+  let startX = 0, startY = 0;
+  let startRotX = 0, startRotY = 0;
+
+  // Only rotate when Shift held — otherwise let D3 node drag work
+  svg.addEventListener('mousedown', (e) => {
+    if (!e.shiftKey) return;
+    e.preventDefault();
+    e.stopPropagation();
+    isDragging = true;
+    svg.classList.add('dragging');
+    startX = e.clientX; startY = e.clientY;
+    startRotX = rotX; startRotY = rotY;
+    if (autoRotate) toggleAutoRotate();
+  }, true);
+
+  window.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    rotY = startRotY + dx * 0.4;
+    rotX = Math.max(-85, Math.min(85, startRotX - dy * 0.4));
+    applyRotation();
+  });
+
+  window.addEventListener('mouseup', () => {
+    if (isDragging) {
+      isDragging = false;
+      svg.classList.remove('dragging');
     }
   });
 
-  // Charge force tuning
-  Graph3D.d3Force('charge').strength(-180);
-  Graph3D.d3Force('link').distance(link => {
-    const a = typeof link.source === 'object' ? link.source : { id: link.source };
-    const b = typeof link.target === 'object' ? link.target : { id: link.target };
-    return 50;
-  });
-
-  refreshGraphData();
-
-  // Auto-rotate camera gently when idle
-  let autoRotate = true;
-  const ctrl = Graph3D.controls();
-  if (ctrl) {
-    ctrl.autoRotate = autoRotate;
-    ctrl.autoRotateSpeed = 0.4;
-    el.addEventListener('mousedown', () => { ctrl.autoRotate = false; });
-    el.addEventListener('mouseleave', () => { ctrl.autoRotate = true; });
-  }
-
-  // Resize handling
-  const resize = () => {
-    Graph3D.width(el.clientWidth).height(el.clientHeight);
-  };
-  resize();
-  window.addEventListener('resize', resize);
-}
-
-function refreshGraphData() {
-  if (!Graph3D) return;
-  Graph3D.graphData(getVisibleData());
+  applyRotation();
 }
 
 // ═══════════════════════════════════════════════════
@@ -1355,6 +1487,10 @@ function handleVoiceCmd(cmd) {
     setFilter('systems');
   } else if (s.includes('重置') || s.includes('全圖')) {
     setFilter('all');
+  } else if (s.includes('自轉') || s.includes('旋轉')) {
+    toggleAutoRotate();
+  } else if (s.includes('視角')) {
+    resetRotation();
   }
 
   setTimeout(() => {
@@ -1373,11 +1509,17 @@ renderProjectList();
 window.addEventListener('load', () => {
   setTimeout(() => {
     initGraph();
+    initRotationDrag();
     loadData();
   }, 200);
 });
 
 setInterval(loadData, 5 * 60 * 1000);
+
+// Resize
+window.addEventListener('resize', () => {
+  initGraph();
+});
 </script>
 </body>
 </html>
