@@ -1,165 +1,196 @@
 {
-  "updated_at": "2026-05-26T16:20:48.666232+08:00",
-  "tasks": {
-    "pending": 2,
-    "in_progress": 0,
-    "failed": 13,
-    "completed_today": 8,
-    "completed_total": 52
+  "generated_at": "2026-06-04T16:22:01.776090+08:00",
+  "board_updated": "2026-06-02",
+  "maintainer": "L1 (Windows Claude / #12 總指揮)",
+  "stats": {
+    "pending_user": 4,
+    "live": 3,
+    "scoping": 3,
+    "done": 4,
+    "urgent": 1,
+    "total": 16
   },
   "projects": [
     {
       "num": 1,
-      "name": "快速生圖",
-      "status": "運行中",
-      "executor": "Mac Claude",
-      "desc": "圖片生成 API，內容生產管線"
+      "name": "生圖 Closet",
+      "window": "02",
+      "status_text": "🟡 doc done(f05963b)；實測 3-pro 活/Vertex fallback **死**；重整排 #2 後",
+      "status_emoji": "🟡",
+      "status_tag": "partial",
+      "status_label": "部分完成"
     },
     {
       "num": 2,
-      "name": "發布",
-      "status": "過渡中",
-      "executor": "Mac Claude",
-      "desc": "待併入 #5 剪片+發布"
+      "name": "social-v2",
+      "window": "01+小建",
+      "status_text": "🟢🟢 **Phase 1 LIVE**：後端公開 `api.nicocodailybasic.com`(service token,實測200)+ #16 已接(client.ts Bearer + .env)。待你 reload Expo 親驗",
+      "status_emoji": "🟢🟢",
+      "status_tag": "live",
+      "status_label": "已上線"
     },
     {
       "num": 3,
-      "name": "MiniMax 倉庫",
-      "status": "運行中",
-      "executor": "MiniMax",
-      "desc": "CF Worker 橋接，QDM↔GW webhook"
+      "name": "倉助",
+      "window": "—",
+      "status_text": "❌ 廢除→可可",
+      "status_emoji": "❌",
+      "status_tag": "killed",
+      "status_label": "已廢除"
     },
     {
       "num": 4,
       "name": "NICOCHAT",
-      "status": "進行中",
-      "executor": "Mobile Claude",
-      "desc": "客服/CRM 層，AI 客服助理"
+      "window": "03",
+      "status_text": "✅ recon；碼已備份(9356ec2)；JWT 待修",
+      "status_emoji": "✅",
+      "status_tag": "done",
+      "status_label": "完成"
     },
     {
       "num": 5,
-      "name": "剪片+發布",
-      "status": "規劃中",
-      "executor": "Mac Claude",
-      "desc": "剪片自動化 + 社群發布"
+      "name": "剪片發布(影音)",
+      "window": "04",
+      "status_text": "✅ recon(116 成品/RTX5090)；push=純碼 repo(圖留本機)；產物餵 #2 P2；運算留本機",
+      "status_emoji": "✅",
+      "status_tag": "done",
+      "status_label": "完成"
     },
     {
       "num": 6,
-      "name": "VTO 換衣",
-      "status": "0%",
-      "executor": "Windows Claude",
-      "desc": "虛擬試穿，成長工具層"
+      "name": "VTO",
+      "window": "08",
+      "status_text": "🔵 scoping done(repo nicocodaily-vto)；v1=**fashn.ai 商用 API**(自架非商用授權)；**待 MVQ 測試料=你**",
+      "status_emoji": "🔵",
+      "status_tag": "scoping",
+      "status_label": "規劃中"
     },
     {
       "num": 7,
-      "name": "採購彙整",
-      "status": "0%",
-      "executor": "MiniMax",
-      "desc": "接 LINE/倉庫系統"
+      "name": "採購",
+      "window": "—",
+      "status_text": "⏸️ 未來給可可",
+      "status_emoji": "⏸️",
+      "status_tag": "paused",
+      "status_label": "暫停"
     },
     {
       "num": 8,
       "name": "AI 投資",
-      "status": "待定",
-      "executor": "Windows Claude",
-      "desc": "高風險，需人工監督"
+      "window": "09",
+      "status_text": "🔵 scoping done(repo nicoco-equity-sandbox)；先免費資料+純量化+本機；待 Phase1",
+      "status_emoji": "🔵",
+      "status_tag": "scoping",
+      "status_label": "規劃中"
     },
     {
       "num": 9,
-      "name": "AI 廣告投放",
-      "status": "規劃中",
-      "executor": "Windows Claude",
-      "desc": "Meta API，成長工具層"
+      "name": "Meta ETL",
+      "window": "07",
+      "status_text": "🟡 免 token 準備；真實跑等你 Meta 權限",
+      "status_emoji": "🟡",
+      "status_tag": "partial",
+      "status_label": "部分完成"
     },
     {
       "num": 10,
-      "name": "爬蟲市調",
-      "status": "完成",
-      "executor": "Mac Claude",
-      "desc": "nicocodaily.com 202 連結已分析"
+      "name": "爬蟲",
+      "window": "—",
+      "status_text": "✅ 100%",
+      "status_emoji": "✅",
+      "status_tag": "done",
+      "status_label": "完成"
     },
     {
       "num": 11,
-      "name": "TG 情報入口",
-      "status": "完成",
-      "executor": "Mac Claude",
-      "desc": "Telegram Bot 摘要分類路由"
+      "name": "TG 情報",
+      "window": "05",
+      "status_text": "🔴 recon 發現程式壞；修 3 行+搬 VPS（執行）",
+      "status_emoji": "🔴",
+      "status_tag": "urgent",
+      "status_label": "需處理"
     },
     {
       "num": 12,
       "name": "系統整合",
-      "status": "進行中",
-      "executor": "Windows Claude",
-      "desc": "L1/L2/L3 架構建設"
+      "window": "我",
+      "status_text": "🟢 派工/審/決策機制運轉中",
+      "status_emoji": "🟢",
+      "status_tag": "live",
+      "status_label": "運行中"
     },
     {
       "num": 13,
-      "name": "AI 藝術庫",
-      "status": "規劃中",
-      "executor": "Mac Claude",
-      "desc": "收集背景/模特兒/服飾素材"
+      "name": "藝術庫",
+      "window": "06",
+      "status_text": "✅ recon；Phase1（共用#2打標/就地/只真實）執行",
+      "status_emoji": "✅",
+      "status_tag": "done",
+      "status_label": "完成"
+    },
+    {
+      "num": 14,
+      "name": "遊戲",
+      "window": "10",
+      "status_text": "🔵 scoping done(repo nicocodaily-game)；仙俠英靈收集 RPG/Godot；5 決策已定",
+      "status_emoji": "🔵",
+      "status_tag": "scoping",
+      "status_label": "規劃中"
+    },
+    {
+      "num": 15,
+      "name": "廣告客戶",
+      "window": "—",
+      "status_text": "併入 #2 多租戶",
+      "status_emoji": "",
+      "status_tag": "none",
+      "status_label": ""
+    },
+    {
+      "num": 16,
+      "name": "Review App",
+      "window": "01",
+      "status_text": "🟢 Scene A 上線；Scene B+1b 進行（1b→master）",
+      "status_emoji": "🟢",
+      "status_tag": "live",
+      "status_label": "運行中"
     }
   ],
-  "activity": [
+  "pending_user": [
+    "**#6 MVQ go/no-go**：fashn.ai API key + 10-15 張樣本自拍 + 指定幾件 #1 白背商品 → 跑試穿、你盲評，過了才建 App",
+    "**#2 上線**：CF Access team domain/AUD + DNS（部署準備好我給你確切步驟）",
+    "**#9**：Meta System User Token",
+    "小事：`%TEMP%\\inspect.py` 殘檔卡本機 python，建議刪"
+  ],
+  "priorities": [
+    "**修本機 headless**：在 Windows 終端機跑一次 `claude login`，讓 L1 能本機 `claude -p` 無頭驅動本機 repo(白天用，省去 GUI 窗轉述)。目前本機 CLI 401、只有 VPS 能 headless。",
+    "**收尾 #2 上線**：審 `feat/service-token-auth` → merge → 開 cloudflared ingress + DNS `api.nicocodaily.com` → 測 token → LIVE。",
+    "審過夜分支(feat/ovn-*)+ 3 份審查報告(~/overnight/audits/)。"
+  ],
+  "snapshot": [
+    "**#2 深化**：01-platform-map / 02-regen-multisku / 03-api-tests / 04-ingest-cron ✅ 已 push；05-publish-harden / 06-golive-doc 跑中(分支 feat/ovn-*)",
+    "**倉庫審查**：NICOCHAT / nicoco-closet / ai-art-library ✅ 報告在 VPS `~/overnight/audits/`",
+    "**service-token auth**：跑中(feat/service-token-auth)",
+    "三條 runner 都 nohup、卡額度自動 sleep 重試吃下個窗"
+  ],
+  "team": [
     {
-      "title": "#DASH 建立 NICOCODAILY 指揮台並部署 GitHub Pages（手機可讀）",
-      "status": "失敗",
-      "executor": "Mac Claude",
-      "date": "2026-05-26"
+      "name": "L1 Windows Claude",
+      "role": "決策 / 派工 / 審 code",
+      "level": "L1",
+      "state": "在主窗"
     },
     {
-      "title": "審查完成：回報：poll_",
-      "status": "失敗",
-      "executor": "Windows Claude",
-      "date": "2026-05-26"
+      "name": "小建 (VPS)",
+      "role": "L2 雲端工程 · 24/7",
+      "level": "L2",
+      "state": "跑中：`feat/deploy`（#2 部署準備）"
     },
     {
-      "title": "審查完成：poll_",
-      "status": "失敗",
-      "executor": "Windows Claude",
-      "date": "2026-05-26"
-    },
-    {
-      "title": "[重試] #7 微信採購彙整系統：範疇定義 + 第一版架構",
-      "status": "失敗",
-      "executor": "MiniMax",
-      "date": "2026-05-26"
-    },
-    {
-      "title": "#13 將 Canva 生圖匯出 PNG 儲存到 Google Drive",
-      "status": "完成",
-      "executor": "Mac Claude",
-      "date": "2026-05-26"
-    },
-    {
-      "title": "poll_tasks.py 新增 Windows Claude 自動審查迴路",
-      "status": "完成",
-      "executor": "Mac Claude",
-      "date": "2026-05-26"
-    },
-    {
-      "title": "回報：poll_tasks.py 找到任務後實際做了什麼？",
-      "status": "完成",
-      "executor": "Mac Claude",
-      "date": "2026-05-26"
-    },
-    {
-      "title": "審查完成：系統健康回報：PM2 + l1_service + MiniMax 觸發機制",
-      "status": "失敗",
-      "executor": "Windows Claude",
-      "date": "2026-05-26"
-    },
-    {
-      "title": "系統健康回報：PM2 + l1_service + MiniMax 觸發機制",
-      "status": "完成",
-      "executor": "Mac Claude",
-      "date": "2026-05-26"
-    },
-    {
-      "title": "#7 微信採購彙整系統：範疇定義 + 第一版架構",
-      "status": "失敗",
-      "executor": "MiniMax",
-      "date": "2026-05-26"
+      "name": "可可",
+      "role": "LINE 倉助",
+      "level": "OPS",
+      "state": "LINE 倉助上線（取代#3，未來接#7）"
     }
   ]
 }

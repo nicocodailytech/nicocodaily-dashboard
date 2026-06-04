@@ -2,1524 +2,310 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NICOCODAILY · JARVIS</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#020812">
+  <title>NICOCODAILY · 派工戰情</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,600;0,700;1,300&display=swap" rel="stylesheet">
-  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --bg:        #020812;
-      --bg2:       #040d1e;
-      --panel:     #060f22;
-      --panel2:    #081428;
-      --border:    #0d2040;
-      --border-glow: #1a4080;
-      --cyan:      #00d4ff;
-      --cyan-dim:  #005577;
-      --blue:      #1a6fff;
-      --blue-dim:  #0a3380;
-      --green:     #00ff88;
-      --green-dim: #005533;
-      --purple:    #b060ff;
-      --purple-dim:#3a1566;
-      --yellow:    #ffcc00;
-      --orange:    #ff8c00;
-      --red:       #ff2244;
-      --red-dim:   #550011;
-      --gray:      #3a5070;
-      --text:      #a0c8e8;
-      --text-dim:  #3a6080;
-      --text-bright: #d8f0ff;
-      --text-glow: #00d4ff;
+    :root{
+      --bg:#020812; --panel:#060f22; --panel2:#081428;
+      --border:#0d2040; --border-glow:#1a4080;
+      --cyan:#00d4ff; --blue:#1a6fff; --green:#00ff88;
+      --yellow:#ffcc00; --orange:#ff8c00; --red:#ff2244;
+      --gray:#3a5070; --text:#a0c8e8; --text-dim:#5a7da0;
+      --text-bright:#d8f0ff;
+    }
+    *{box-sizing:border-box; margin:0; padding:0;}
+    html,body{
+      background:var(--bg); color:var(--text);
+      font-family:'JetBrains Mono','Courier New',monospace;
+      font-size:14px; line-height:1.5;
+      -webkit-text-size-adjust:100%;
+    }
+    body{
+      max-width:1100px; margin:0 auto;
+      padding:0 14px env(safe-area-inset-bottom) 14px;
+    }
+
+    /* ── HEADER ── */
+    header{
+      position:sticky; top:0; z-index:50;
+      background:linear-gradient(180deg,#030a18 0%,rgba(2,8,18,0.96) 100%);
+      border-bottom:1px solid var(--border-glow);
+      padding:12px 4px; margin:0 -14px 16px; padding-left:18px; padding-right:18px;
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      backdrop-filter:blur(6px);
+    }
+    .brand{display:flex; align-items:center; gap:10px; min-width:0;}
+    .logo{
+      width:34px; height:34px; flex-shrink:0;
+      border:1px solid var(--cyan); border-radius:7px;
+      display:flex; align-items:center; justify-content:center;
+      color:var(--cyan); font-size:17px;
+      box-shadow:0 0 12px rgba(0,212,255,.35), inset 0 0 8px rgba(0,212,255,.1);
+    }
+    .brand h1{font-size:14px; font-weight:700; color:var(--text-bright); letter-spacing:.08em;}
+    .brand .sub{font-size:9px; color:var(--text-dim); letter-spacing:.06em; margin-top:1px;}
+    .hclock{text-align:right; flex-shrink:0;}
+    #clock{font-size:18px; font-weight:300; color:var(--cyan); font-variant-numeric:tabular-nums; letter-spacing:.05em;}
+    #board-date{font-size:9px; color:var(--text-dim); margin-top:1px;}
+
+    /* ── SECTION ── */
+    section{margin-bottom:22px;}
+    .sec-head{display:flex; align-items:center; gap:8px; margin-bottom:10px;}
+    .sec-head::before{content:''; width:3px; height:15px; background:var(--cyan); box-shadow:0 0 8px var(--cyan); border-radius:2px;}
+    .sec-head h2{font-size:11px; font-weight:700; letter-spacing:.12em; color:var(--text-dim); text-transform:uppercase;}
+    .sec-head .count{font-size:10px; color:var(--cyan); margin-left:auto; font-weight:700;}
+
+    /* ── STATS ── */
+    .stats{display:grid; grid-template-columns:repeat(5,1fr); gap:8px;}
+    .stat{background:var(--panel2); border:1px solid var(--border); border-radius:8px; padding:10px 6px; text-align:center; position:relative; overflow:hidden;}
+    .stat::after{content:''; position:absolute; top:0; left:0; right:0; height:2px;}
+    .stat .n{font-size:24px; font-weight:700; color:var(--text-bright); font-variant-numeric:tabular-nums; line-height:1;}
+    .stat .l{font-size:9px; color:var(--text-dim); margin-top:5px; letter-spacing:.04em;}
+    .stat.user::after{background:var(--orange); box-shadow:0 0 8px var(--orange);}
+    .stat.user .n{color:var(--orange);}
+    .stat.live::after{background:var(--green); box-shadow:0 0 8px var(--green);}
+    .stat.live .n{color:var(--green);}
+    .stat.scoping::after{background:var(--blue);}
+    .stat.done::after{background:var(--gray);}
+    .stat.total::after{background:var(--cyan);}
+
+    /* ── 待用戶 (priority) ── */
+    .user-list{display:flex; flex-direction:column; gap:10px;}
+    .user-card{
+      background:linear-gradient(135deg,rgba(255,140,0,.08),rgba(255,140,0,.02));
+      border:1px solid rgba(255,140,0,.4); border-left:3px solid var(--orange);
+      border-radius:8px; padding:12px 14px;
+    }
+    .user-card .t{color:var(--text-bright); font-weight:600; font-size:13px; margin-bottom:4px;}
+    .user-card .d{color:var(--text); font-size:12px; line-height:1.55;}
+    .user-card.minor{border-color:var(--border); border-left-color:var(--gray); background:var(--panel2);}
+    .user-card.minor .t{color:var(--text);}
+
+    /* ── projects ── */
+    .proj-grid{display:grid; grid-template-columns:1fr; gap:8px;}
+    .proj{
+      background:var(--panel2); border:1px solid var(--border);
+      border-left:3px solid var(--gray); border-radius:8px; padding:10px 12px;
+    }
+    .proj-top{display:flex; align-items:center; gap:8px; margin-bottom:4px;}
+    .proj .id{font-size:11px; font-weight:700; color:var(--text-dim); min-width:30px;}
+    .proj .nm{font-size:13px; font-weight:600; color:var(--text-bright); flex:1; min-width:0;}
+    .proj .win{font-size:9px; color:var(--text-dim); padding:1px 6px; border:1px solid var(--border); border-radius:4px; white-space:nowrap;}
+    .proj .badge{font-size:14px; line-height:1;}
+    .proj .desc{font-size:11px; color:var(--text); line-height:1.5;}
+    .proj.live{border-left-color:var(--green);}
+    .proj.partial{border-left-color:var(--yellow);}
+    .proj.scoping{border-left-color:var(--blue);}
+    .proj.urgent{border-left-color:var(--red); background:linear-gradient(135deg,rgba(255,34,68,.06),var(--panel2));}
+    .proj.done{border-left-color:var(--gray); opacity:.78;}
+    .proj.killed{border-left-color:var(--gray); opacity:.5;}
+    .proj.paused{border-left-color:var(--gray); opacity:.65;}
+
+    /* ── team ── */
+    .team{display:grid; grid-template-columns:1fr; gap:8px;}
+    .tm{background:var(--panel2); border:1px solid var(--border); border-radius:8px; padding:9px 12px; display:flex; align-items:center; gap:10px;}
+    .tm .dot{width:8px; height:8px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green); flex-shrink:0;}
+    .tm .info{flex:1; min-width:0;}
+    .tm .nm{font-size:12px; font-weight:600; color:var(--text-bright);}
+    .tm .ro{font-size:10px; color:var(--text-dim); margin-top:1px;}
+    .tm .st{font-size:10px; color:var(--cyan); margin-top:3px; word-break:break-word;}
+    .tm .lv{font-size:9px; padding:2px 7px; border-radius:4px; font-weight:700; flex-shrink:0; background:rgba(0,212,255,.12); color:var(--cyan); border:1px solid rgba(0,212,255,.3);}
+
+    /* ── collapsible (priorities/snapshot) ── */
+    details{background:var(--panel2); border:1px solid var(--border); border-radius:8px; margin-bottom:8px;}
+    details summary{padding:10px 12px; cursor:pointer; font-size:11px; font-weight:700; letter-spacing:.08em; color:var(--text-dim); list-style:none; display:flex; align-items:center; gap:8px;}
+    details summary::-webkit-details-marker{display:none;}
+    details summary::before{content:'▸'; color:var(--cyan); transition:transform .15s;}
+    details[open] summary::before{transform:rotate(90deg);}
+    details .body{padding:0 14px 12px;}
+    details li{font-size:12px; color:var(--text); margin:6px 0 6px 4px; line-height:1.5; list-style:none; padding-left:14px; position:relative;}
+    details li::before{content:'·'; position:absolute; left:2px; color:var(--cyan);}
+
+    code{background:rgba(0,212,255,.1); color:var(--cyan); padding:1px 5px; border-radius:4px; font-size:.9em; word-break:break-all;}
+    strong{color:var(--text-bright);}
+
+    /* ── footer ── */
+    footer{border-top:1px solid var(--border); padding:12px 0 8px; margin-top:20px; display:flex; align-items:center; justify-content:space-between; font-size:10px; color:var(--text-dim); gap:10px; flex-wrap:wrap;}
+    .sysdot{width:6px; height:6px; border-radius:50%; background:var(--green); box-shadow:0 0 6px var(--green); display:inline-block; margin-right:5px; vertical-align:middle;}
+    .rbtn{background:none; border:1px solid var(--border-glow); border-radius:5px; padding:4px 10px; color:var(--cyan); font-family:inherit; font-size:10px; cursor:pointer;}
+    .rbtn:active{background:rgba(0,212,255,.12);}
+
+    #err{display:none; background:rgba(255,34,68,.1); border:1px solid var(--red); color:var(--red); padding:10px; border-radius:8px; margin-bottom:16px; font-size:12px;}
+
+    /* ── desktop widen ── */
+    @media(min-width:680px){
+      .proj-grid{grid-template-columns:1fr 1fr;}
+      .team{grid-template-columns:repeat(3,1fr);}
+    }
+    @media(min-width:980px){
+      .proj-grid{grid-template-columns:1fr 1fr 1fr;}
+    }
+    @media(max-width:380px){
+      .stats{grid-template-columns:repeat(3,1fr);}
+      #clock{font-size:15px;}
     }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    html, body {
-      width: 100%; height: 100%;
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'JetBrains Mono', 'Courier New', monospace;
-      font-size: 13px;
-      overflow-x: hidden;
-    }
-
-    /* Scan lines overlay */
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background: repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 2px,
-        rgba(0,20,40,0.15) 2px,
-        rgba(0,20,40,0.15) 4px
-      );
-      pointer-events: none;
-      z-index: 1000;
-    }
-
-    /* Grid overlay */
-    body::after {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image:
-        linear-gradient(rgba(0,80,140,0.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0,80,140,0.04) 1px, transparent 1px);
-      background-size: 40px 40px;
-      pointer-events: none;
-      z-index: 999;
-    }
-
-    /* ─── HEADER ─── */
-    header {
-      position: sticky;
-      top: 0;
-      z-index: 200;
-      background: linear-gradient(180deg, #030a18 0%, rgba(2,8,18,0.95) 100%);
-      border-bottom: 1px solid var(--border-glow);
-      box-shadow: 0 0 20px rgba(0,120,200,0.15), 0 0 40px rgba(0,80,140,0.08);
-      padding: 12px 20px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-    }
-
-    .header-brand {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
-
-    .header-logo {
-      width: 36px; height: 36px;
-      border: 1px solid var(--cyan);
-      border-radius: 6px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 18px;
-      color: var(--cyan);
-      box-shadow: 0 0 12px rgba(0,212,255,0.4), inset 0 0 8px rgba(0,212,255,0.1);
-      animation: logo-pulse 3s ease-in-out infinite;
-      flex-shrink: 0;
-    }
-
-    @keyframes logo-pulse {
-      0%,100% { box-shadow: 0 0 12px rgba(0,212,255,0.4), inset 0 0 8px rgba(0,212,255,0.1); }
-      50%      { box-shadow: 0 0 24px rgba(0,212,255,0.7), inset 0 0 14px rgba(0,212,255,0.2); }
-    }
-
-    .header-title {
-      font-size: 15px;
-      font-weight: 700;
-      color: var(--text-bright);
-      letter-spacing: 0.12em;
-      text-shadow: 0 0 12px rgba(0,212,255,0.4);
-    }
-
-    .header-sub {
-      font-size: 10px;
-      color: var(--text-dim);
-      letter-spacing: 0.08em;
-      margin-top: 2px;
-    }
-
-    .header-center {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    /* Voice button */
-    .voice-btn {
-      position: relative;
-      width: 44px; height: 44px;
-      border: 1px solid var(--cyan-dim);
-      border-radius: 50%;
-      background: rgba(0,212,255,0.06);
-      color: var(--cyan);
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 18px;
-      transition: all 0.2s;
-    }
-
-    .voice-btn:hover {
-      border-color: var(--cyan);
-      box-shadow: 0 0 16px rgba(0,212,255,0.4);
-    }
-
-    .voice-btn.listening {
-      border-color: var(--red);
-      color: var(--red);
-      box-shadow: 0 0 20px rgba(255,34,68,0.5);
-      animation: voice-ring 1s ease-in-out infinite;
-    }
-
-    @keyframes voice-ring {
-      0%,100% { box-shadow: 0 0 12px rgba(255,34,68,0.4); }
-      50%      { box-shadow: 0 0 28px rgba(255,34,68,0.8), 0 0 50px rgba(255,34,68,0.3); }
-    }
-
-    .voice-status {
-      font-size: 10px;
-      color: var(--text-dim);
-      letter-spacing: 0.06em;
-      min-width: 120px;
-    }
-
-    .voice-status.active { color: var(--cyan); }
-
-    .header-right {
-      text-align: right;
-    }
-
-    #clock {
-      font-size: 24px;
-      font-weight: 300;
-      color: var(--cyan);
-      letter-spacing: 0.08em;
-      font-variant-numeric: tabular-nums;
-      text-shadow: 0 0 10px rgba(0,212,255,0.5);
-    }
-
-    #clock-date {
-      font-size: 10px;
-      color: var(--text-dim);
-      margin-top: 2px;
-      letter-spacing: 0.06em;
-    }
-
-    /* ─── MAIN 3-COLUMN ─── */
-    .app {
-      display: grid;
-      grid-template-columns: 260px 1fr 280px;
-      grid-template-rows: auto 1fr;
-      height: calc(100vh - 68px);
-      gap: 0;
-    }
-
-    /* ─── PANEL BASE ─── */
-    .panel {
-      background: var(--panel);
-      border-right: 1px solid var(--border);
-      padding: 16px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .panel:last-child { border-right: none; border-left: 1px solid var(--border); }
-
-    .panel::-webkit-scrollbar { width: 3px; }
-    .panel::-webkit-scrollbar-track { background: transparent; }
-    .panel::-webkit-scrollbar-thumb { background: var(--border-glow); border-radius: 2px; }
-
-    /* ─── SECTION HEADERS ─── */
-    .sec-header {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 10px;
-    }
-
-    .sec-header::before {
-      content: '';
-      display: block;
-      width: 3px; height: 14px;
-      background: var(--cyan);
-      box-shadow: 0 0 8px var(--cyan);
-      border-radius: 2px;
-      flex-shrink: 0;
-    }
-
-    .sec-title {
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.14em;
-      color: var(--text-dim);
-      text-transform: uppercase;
-    }
-
-    /* ─── TASK STATS ─── */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-    }
-
-    .stat-box {
-      background: var(--panel2);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 10px 12px;
-      position: relative;
-      overflow: hidden;
-      transition: border-color 0.2s;
-    }
-
-    .stat-box::after {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 1px;
-    }
-
-    .stat-box.pending::after  { background: var(--blue); box-shadow: 0 0 8px var(--blue); }
-    .stat-box.running::after  { background: var(--green); box-shadow: 0 0 8px var(--green); }
-    .stat-box.failed::after   { background: var(--red); box-shadow: 0 0 8px var(--red); }
-    .stat-box.done::after     { background: var(--gray); }
-
-    .stat-lbl {
-      font-size: 9px;
-      font-weight: 700;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      margin-bottom: 6px;
-    }
-
-    .stat-box.pending .stat-lbl { color: var(--blue); }
-    .stat-box.running .stat-lbl { color: var(--green); }
-    .stat-box.failed  .stat-lbl { color: var(--red); }
-    .stat-box.done    .stat-lbl { color: var(--gray); }
-
-    .stat-num {
-      font-size: 28px;
-      font-weight: 700;
-      color: var(--text-bright);
-      font-variant-numeric: tabular-nums;
-      letter-spacing: -0.02em;
-      line-height: 1;
-    }
-
-    .stat-box.failed .stat-num { color: var(--red); }
-    .stat-box.running .stat-num { color: var(--green); animation: pulse-opacity 2s ease-in-out infinite; }
-
-    @keyframes pulse-opacity {
-      0%,100% { opacity: 1; }
-      50%      { opacity: 0.6; }
-    }
-
-    .stat-sub { font-size: 9px; color: var(--text-dim); margin-top: 3px; }
-
-    /* ─── AGENT STATUS ─── */
-    .agent-list { display: flex; flex-direction: column; gap: 6px; }
-
-    .agent-row {
-      background: var(--panel2);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 8px 10px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .agent-dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-
-    .agent-dot.online  { background: var(--green); box-shadow: 0 0 8px var(--green); animation: pulse-opacity 2s ease-in-out infinite; }
-    .agent-dot.standby { background: var(--yellow); box-shadow: 0 0 6px var(--yellow); }
-    .agent-dot.offline { background: var(--gray); }
-
-    .agent-info { flex: 1; min-width: 0; }
-    .agent-name { font-size: 11px; font-weight: 600; color: var(--text-bright); }
-    .agent-role { font-size: 9px; color: var(--text-dim); margin-top: 1px; letter-spacing: 0.04em; }
-
-    .agent-badge {
-      font-size: 9px;
-      padding: 2px 6px;
-      border-radius: 3px;
-      font-weight: 600;
-      letter-spacing: 0.06em;
-    }
-
-    .agent-badge.l1 { background: rgba(0,212,255,0.12); color: var(--cyan); border: 1px solid rgba(0,212,255,0.3); }
-    .agent-badge.l2 { background: rgba(0,255,136,0.08); color: var(--green); border: 1px solid rgba(0,255,136,0.25); }
-
-    /* ─── PROJECT PROGRESS ─── */
-    .project-list { display: flex; flex-direction: column; gap: 8px; }
-
-    .proj-item {
-      background: var(--panel2);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 8px 10px;
-      transition: border-color 0.2s;
-    }
-
-    .proj-item:hover { border-color: var(--border-glow); }
-
-    .proj-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 6px;
-    }
-
-    .proj-id { font-size: 9px; color: var(--text-dim); font-weight: 700; }
-    .proj-name { font-size: 11px; color: var(--text-bright); font-weight: 600; flex: 1; margin: 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .proj-pct { font-size: 9px; font-weight: 700; min-width: 28px; text-align: right; }
-
-    .prog-row {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      margin-top: 4px;
-    }
-
-    .prog-label {
-      font-size: 8px;
-      color: var(--text-dim);
-      letter-spacing: 0.04em;
-      width: 28px;
-      flex-shrink: 0;
-    }
-
-    .prog-track {
-      flex: 1;
-      height: 4px;
-      background: rgba(255,255,255,0.05);
-      border-radius: 2px;
-      overflow: hidden;
-    }
-
-    .prog-fill {
-      height: 100%;
-      border-radius: 2px;
-      transition: width 1s cubic-bezier(0.4,0,0.2,1);
-    }
-
-    .prog-fill.module { background: linear-gradient(90deg, var(--cyan-dim), var(--cyan)); box-shadow: 0 0 6px rgba(0,212,255,0.4); }
-    .prog-fill.integ  { background: linear-gradient(90deg, var(--blue-dim), var(--blue)); box-shadow: 0 0 6px rgba(26,111,255,0.4); }
-
-    .prog-num { font-size: 8px; color: var(--text-dim); width: 24px; text-align: right; flex-shrink: 0; }
-
-    .proj-tags {
-      display: flex;
-      gap: 4px;
-      margin-top: 5px;
-      flex-wrap: wrap;
-    }
-
-    .proj-tag {
-      font-size: 8px;
-      padding: 1px 5px;
-      border-radius: 3px;
-      border: 1px solid;
-      letter-spacing: 0.04em;
-      font-weight: 600;
-    }
-
-    .proj-tag.active   { color: var(--green);  border-color: rgba(0,255,136,0.4); background: rgba(0,255,136,0.06); }
-    .proj-tag.progress { color: var(--blue);   border-color: rgba(26,111,255,0.4); background: rgba(26,111,255,0.06); }
-    .proj-tag.planning { color: var(--yellow); border-color: rgba(255,204,0,0.4); background: rgba(255,204,0,0.06); }
-    .proj-tag.transit  { color: var(--orange); border-color: rgba(255,140,0,0.4); background: rgba(255,140,0,0.06); }
-    .proj-tag.done     { color: var(--gray);   border-color: rgba(58,80,112,0.5); background: rgba(58,80,112,0.08); }
-    .proj-tag.none     { color: var(--text-dim); border-color: rgba(58,80,112,0.3); background: transparent; }
-
-    /* ─── CENTER: D3 GRAPH ─── */
-    .graph-center {
-      position: relative;
-      background: var(--bg2);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      perspective: 1800px;
-      perspective-origin: 50% 50%;
-    }
-
-    .graph-toolbar {
-      position: absolute;
-      top: 12px; left: 12px;
-      z-index: 10;
-      display: flex;
-      gap: 6px;
-    }
-
-    .gtool-btn {
-      background: rgba(2,8,18,0.85);
-      border: 1px solid var(--border-glow);
-      border-radius: 4px;
-      padding: 5px 10px;
-      color: var(--text-dim);
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 10px;
-      cursor: pointer;
-      transition: all 0.15s;
-      letter-spacing: 0.06em;
-    }
-
-    .gtool-btn:hover, .gtool-btn.active {
-      color: var(--cyan);
-      border-color: var(--cyan);
-      box-shadow: 0 0 10px rgba(0,212,255,0.3);
-    }
-
-    #graph-svg {
-      width: 100%;
-      height: 100%;
-      flex: 1;
-      transform-style: preserve-3d;
-      transform-origin: 50% 50%;
-      will-change: transform;
-      cursor: grab;
-      user-select: none;
-    }
-    #graph-svg.dragging { cursor: grabbing; }
-
-    /* Rotation control panel */
-    .rot-panel {
-      position: absolute;
-      top: 12px; right: 12px;
-      z-index: 10;
-      background: rgba(2,8,18,0.85);
-      border: 1px solid var(--border-glow);
-      border-radius: 6px;
-      padding: 8px 10px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      font-size: 9px;
-      color: var(--text-dim);
-      letter-spacing: 0.04em;
-    }
-    .rot-panel button {
-      background: none;
-      border: 1px solid var(--border-glow);
-      color: var(--cyan);
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 10px;
-      padding: 3px 8px;
-      border-radius: 3px;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-    .rot-panel button:hover { background: rgba(0,212,255,0.1); box-shadow: 0 0 8px rgba(0,212,255,0.3); }
-    .rot-panel .rot-readout { font-variant-numeric: tabular-nums; color: var(--text); }
-
-    .graph-legend {
-      position: absolute;
-      bottom: 12px; left: 12px;
-      display: flex;
-      gap: 12px;
-      background: rgba(2,8,18,0.85);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 8px 12px;
-    }
-
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      font-size: 9px;
-      color: var(--text-dim);
-      letter-spacing: 0.04em;
-    }
-
-    .legend-dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-
-    .graph-info {
-      position: absolute;
-      bottom: 12px; right: 12px;
-      background: rgba(2,8,18,0.85);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 8px 12px;
-      font-size: 9px;
-      color: var(--text-dim);
-      letter-spacing: 0.04em;
-      max-width: 200px;
-    }
-
-    .graph-info strong { color: var(--cyan); display: block; margin-bottom: 3px; font-size: 10px; }
-
-    /* ─── RIGHT PANEL ─── */
-    .activity-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0;
-    }
-
-    .act-item {
-      padding: 8px 0;
-      border-bottom: 1px solid rgba(13,32,64,0.6);
-      display: flex;
-      gap: 8px;
-      align-items: flex-start;
-    }
-
-    .act-item:last-child { border-bottom: none; }
-
-    .act-dot {
-      width: 6px; height: 6px;
-      border-radius: 50%;
-      margin-top: 4px;
-      flex-shrink: 0;
-    }
-
-    .act-dot.done   { background: var(--green); box-shadow: 0 0 5px var(--green); }
-    .act-dot.failed { background: var(--red); }
-    .act-dot.running { background: var(--blue); animation: pulse-opacity 1.5s ease-in-out infinite; }
-
-    .act-body { flex: 1; min-width: 0; }
-
-    .act-title {
-      font-size: 11px;
-      color: var(--text);
-      line-height: 1.4;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-
-    .act-meta {
-      display: flex;
-      gap: 6px;
-      margin-top: 3px;
-      font-size: 9px;
-      color: var(--text-dim);
-      align-items: center;
-    }
-
-    .act-status { font-weight: 700; }
-    .act-status.done   { color: var(--green); }
-    .act-status.failed { color: var(--red); }
-
-    .act-filter-bar {
-      display: flex;
-      gap: 4px;
-      margin-bottom: 8px;
-    }
-
-    .filter-chip {
-      font-size: 9px;
-      padding: 3px 8px;
-      border-radius: 20px;
-      border: 1px solid var(--border);
-      color: var(--text-dim);
-      cursor: pointer;
-      transition: all 0.15s;
-      font-family: 'JetBrains Mono', monospace;
-    }
-
-    .filter-chip.active, .filter-chip:hover {
-      border-color: var(--cyan);
-      color: var(--cyan);
-      background: rgba(0,212,255,0.08);
-    }
-
-    /* ─── DATA FOOTER ─── */
-    .footer-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 8px 16px;
-      border-top: 1px solid var(--border);
-      background: var(--bg2);
-      font-size: 9px;
-      color: var(--text-dim);
-      letter-spacing: 0.06em;
-      flex-shrink: 0;
-    }
-
-    .footer-bar span { display: flex; align-items: center; gap: 8px; }
-
-    .refresh-btn {
-      background: none;
-      border: 1px solid var(--border-glow);
-      border-radius: 4px;
-      padding: 3px 8px;
-      color: var(--cyan);
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 9px;
-      cursor: pointer;
-      transition: all 0.15s;
-      letter-spacing: 0.06em;
-    }
-
-    .refresh-btn:hover { background: rgba(0,212,255,0.08); box-shadow: 0 0 8px rgba(0,212,255,0.2); }
-
-    /* ─── STATUS INDICATOR ─── */
-    .sys-status {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    .sys-dot {
-      width: 6px; height: 6px;
-      border-radius: 50%;
-      background: var(--green);
-      box-shadow: 0 0 6px var(--green);
-      animation: pulse-opacity 2s ease-in-out infinite;
-    }
-
-    /* ─── LOADING ─── */
-    .loading-overlay {
-      position: fixed;
-      inset: 0;
-      background: var(--bg);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-      flex-direction: column;
-      gap: 20px;
-    }
-
-    .loading-hex {
-      width: 60px; height: 60px;
-      border: 2px solid var(--cyan-dim);
-      border-top-color: var(--cyan);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      box-shadow: 0 0 20px rgba(0,212,255,0.3);
-    }
-
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    .loading-text {
-      font-size: 11px;
-      color: var(--text-dim);
-      letter-spacing: 0.2em;
-      animation: pulse-opacity 1.5s ease-in-out infinite;
-    }
-
-    /* ─── TOOLTIP ─── */
-    .d3-tooltip {
-      position: fixed;
-      background: rgba(4,14,32,0.95);
-      border: 1px solid var(--cyan);
-      border-radius: 6px;
-      padding: 8px 12px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
-      color: var(--text-bright);
-      pointer-events: none;
-      z-index: 500;
-      box-shadow: 0 0 16px rgba(0,212,255,0.3);
-      max-width: 220px;
-      line-height: 1.5;
-    }
-
-    .d3-tooltip strong { color: var(--cyan); }
-    .d3-tooltip .tt-sub { font-size: 9px; color: var(--text-dim); margin-top: 3px; }
   </style>
 </head>
 <body>
 
-<div class="loading-overlay" id="loading">
-  <div class="loading-hex"></div>
-  <div class="loading-text">INITIALIZING JARVIS COMMAND CENTER</div>
-</div>
-
-<div class="d3-tooltip" id="tooltip" style="display:none"></div>
-
-<!-- ═══ HEADER ═══ -->
 <header>
-  <div class="header-brand">
-    <div class="header-logo">◈</div>
+  <div class="brand">
+    <div class="logo">◈</div>
     <div>
-      <div class="header-title">NICOCODAILY · JARVIS</div>
-      <div class="header-sub">L1/L2 Agent Command Center · v2.0</div>
+      <h1>派工戰情看板</h1>
+      <div class="sub">NICOCODAILY · ORCHESTRATION BOARD</div>
     </div>
   </div>
-
-  <div class="header-center">
-    <button class="voice-btn" id="voice-btn" title="語音控制" onclick="toggleVoice()">🎙</button>
-    <div class="voice-status" id="voice-status">VOICE: READY</div>
-  </div>
-
-  <div class="header-right">
-    <div id="clock">--:--:--</div>
-    <div id="clock-date">----/--/--</div>
+  <div class="hclock">
+    <div id="clock">--:--</div>
+    <div id="board-date">看板 ----/--/--</div>
   </div>
 </header>
 
-<!-- ═══ APP BODY ═══ -->
-<div class="app">
+<div id="err"></div>
 
-  <!-- ── LEFT PANEL: System Status + Projects ── -->
-  <div class="panel" id="left-panel">
+<!-- 待用戶：最該被看到，放最前 -->
+<section id="user-sec">
+  <div class="sec-head"><h2>📋 待用戶（真要你的）</h2><span class="count" id="user-count"></span></div>
+  <div class="user-list" id="user-list"></div>
+</section>
 
-    <!-- Task Queue -->
-    <div>
-      <div class="sec-header"><span class="sec-title">任務佇列</span></div>
-      <div class="stats-grid">
-        <div class="stat-box pending">
-          <div class="stat-lbl">待執行</div>
-          <div class="stat-num" id="stat-pending">—</div>
-          <div class="stat-sub">等待派發</div>
-        </div>
-        <div class="stat-box running">
-          <div class="stat-lbl">進行中</div>
-          <div class="stat-num" id="stat-inprogress">—</div>
-          <div class="stat-sub">執行中</div>
-        </div>
-        <div class="stat-box failed">
-          <div class="stat-lbl">失敗</div>
-          <div class="stat-num" id="stat-failed">—</div>
-          <div class="stat-sub">需處理</div>
-        </div>
-        <div class="stat-box done">
-          <div class="stat-lbl">歷史完成</div>
-          <div class="stat-num" id="stat-completed">—</div>
-          <div class="stat-sub" id="stat-today">今日 — 件</div>
-        </div>
-      </div>
-    </div>
+<section>
+  <div class="sec-head"><h2>一眼看</h2></div>
+  <div class="stats" id="stats"></div>
+</section>
 
-    <!-- Agent Status -->
-    <div>
-      <div class="sec-header"><span class="sec-title">Agent 狀態</span></div>
-      <div class="agent-list">
-        <div class="agent-row">
-          <div class="agent-dot online"></div>
-          <div class="agent-info">
-            <div class="agent-name">Windows Claude</div>
-            <div class="agent-role">L1 決策調度 · 本機常駐</div>
-          </div>
-          <span class="agent-badge l1">L1</span>
-        </div>
-        <div class="agent-row">
-          <div class="agent-dot online"></div>
-          <div class="agent-info">
-            <div class="agent-name">Mac Claude</div>
-            <div class="agent-role">L2 技術執行 · 台灣伺服器</div>
-          </div>
-          <span class="agent-badge l2">L2</span>
-        </div>
-        <div class="agent-row">
-          <div class="agent-dot standby"></div>
-          <div class="agent-info">
-            <div class="agent-name">MiniMax 倉</div>
-            <div class="agent-role">L2 中文業務 · OpenClaw</div>
-          </div>
-          <span class="agent-badge l2">L2</span>
-        </div>
-      </div>
-    </div>
+<section>
+  <div class="sec-head"><h2>全專案狀態 #1–#16</h2><span class="count" id="proj-count"></span></div>
+  <div class="proj-grid" id="proj-grid"></div>
+</section>
 
-    <!-- Project Progress -->
-    <div>
-      <div class="sec-header"><span class="sec-title">專案進度</span></div>
-      <div class="project-list" id="project-list"></div>
-    </div>
-  </div>
+<section>
+  <div class="sec-head"><h2>團隊</h2></div>
+  <div class="team" id="team"></div>
+</section>
 
-  <!-- ── CENTER: D3 Force Graph ── -->
-  <div class="graph-center">
-    <div class="graph-toolbar">
-      <button class="gtool-btn active" id="btn-all" onclick="setFilter('all')">全部</button>
-      <button class="gtool-btn" id="btn-active" onclick="setFilter('active')">運行中</button>
-      <button class="gtool-btn" id="btn-agents" onclick="setFilter('agents')">Agent</button>
-      <button class="gtool-btn" id="btn-systems" onclick="setFilter('systems')">系統</button>
-    </div>
+<section id="more-sec">
+  <div class="sec-head"><h2>L1 視角</h2></div>
+  <details id="prio-d"><summary>明天開工優先</summary><div class="body"><ul id="prio-list"></ul></div></details>
+  <details id="snap-d"><summary>過夜進度快照</summary><div class="body"><ul id="snap-list"></ul></div></details>
+</section>
 
-    <svg id="graph-svg"></svg>
-
-    <div class="rot-panel">
-      <span>VIEW <span class="rot-readout" id="rot-readout">X:20° Y:0°</span></span>
-      <button onclick="resetRotation()">RESET 視角</button>
-      <button onclick="toggleAutoRotate()" id="autorot-btn">▶ 自轉</button>
-    </div>
-
-    <div class="graph-legend">
-      <div class="legend-item"><div class="legend-dot" style="background:#00d4ff"></div>Agent</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#00ff88"></div>運行中</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#1a6fff"></div>進行中</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#ffcc00"></div>規劃中</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#ff8c00"></div>過渡中</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#3a5070"></div>系統</div>
-    </div>
-
-    <div class="graph-info" id="graph-info">
-      <strong>節點關係圖</strong>
-      Shift+拖曳 = 轉視角 · 直接拖曳節點 = 移動位置 · 懸停查看詳情
-    </div>
-  </div>
-
-  <!-- ── RIGHT PANEL: Activity ── -->
-  <div class="panel">
-    <div>
-      <div class="sec-header"><span class="sec-title">近期活動</span></div>
-      <div class="act-filter-bar">
-        <span class="filter-chip active" id="f-all" onclick="filterAct('all')">全部</span>
-        <span class="filter-chip" id="f-done" onclick="filterAct('done')">完成</span>
-        <span class="filter-chip" id="f-fail" onclick="filterAct('fail')">失敗</span>
-      </div>
-      <div class="activity-list" id="activity-list"></div>
-    </div>
-  </div>
-
-</div>
-
-<!-- Footer -->
-<div class="footer-bar">
-  <span>
-    <div class="sys-status"><div class="sys-dot"></div> SYSTEM ONLINE</div>
-    <span id="updated-text">載入中…</span>
-  </span>
-  <span>
-    <span>每 5 分鐘自動更新</span>
-    <button class="refresh-btn" onclick="loadData()">↻ REFRESH</button>
-  </span>
-</div>
+<footer>
+  <span><span class="sysdot"></span><span id="updated">載入中…</span></span>
+  <button class="rbtn" onclick="loadData()">↻ 重新整理</button>
+</footer>
 
 <script>
-// ═══════════════════════════════════════════════════
-// PROJECT DEFINITIONS (module% + integration%)
-// Updated manually; fetch_data.py can auto-update later
-// ═══════════════════════════════════════════════════
-const PROJECT_META = {
-  1:  { module: 85, integ: 0,  name: '快速生圖',     executor: 'Mac Claude',     status: '運行中' },
-  2:  { module: 60, integ: 5,  name: 'social-v2',    executor: 'Mac Claude',     status: '進行中' },
-  3:  { module: 80, integ: 20, name: 'MiniMax倉庫',  executor: 'MiniMax',        status: '運行中' },
-  4:  { module: 62, integ: 0,  name: 'NICOCHAT',     executor: 'Mac Claude',     status: '進行中' },
-  5:  { module: 20, integ: 0,  name: '剪片+發布',    executor: 'Mac Claude',     status: '規劃中' },
-  6:  { module: 0,  integ: 0,  name: 'VTO 換衣',     executor: 'Windows Claude', status: '未開始' },
-  7:  { module: 0,  integ: 0,  name: '採購彙整',     executor: 'MiniMax',        status: '未開始' },
-  8:  { module: 0,  integ: 0,  name: 'AI 投資',      executor: 'Windows Claude', status: '待定'   },
-  9:  { module: 5,  integ: 0,  name: 'AI 廣告',      executor: 'Mac Claude',     status: '規劃中' },
-  10: { module: 100, integ: 20, name: '爬蟲市調',    executor: 'Mac Claude',     status: '模組完成' },
-  11: { module: 90, integ: 30, name: 'TG 情報',      executor: 'Mac Claude',     status: '模組完成' },
-  12: { module: 70, integ: 50, name: '系統整合',     executor: 'Windows Claude', status: '進行中' },
-  13: { module: 0,  integ: 0,  name: 'AI 藝術庫',    executor: 'Mac Claude',     status: '未開始' },
-  14: { module: 0,  integ: 0,  name: '電玩部',       executor: 'TBD',            status: '待定'   },
-  15: { module: 0,  integ: 0,  name: '廣告客戶',     executor: 'Mac Claude',     status: '未開始' },
-  16: { module: 30, integ: 0,  name: 'iOS審圖App',   executor: 'Mac Claude',     status: '進行中' },
-};
+const STATUS_LABEL = {live:'運行',partial:'部分',scoping:'規劃',urgent:'處理',done:'完成',killed:'廢除',paused:'暫停',none:'—'};
 
-const STATUS_TAG_MAP = {
-  '運行中':   'active',
-  '過渡中':   'transit',
-  '進行中':   'progress',
-  '規劃中':   'planning',
-  '模組完成': 'planning',
-  '未開始':   'none',
-  '待定':     'none',
-};
-
-// ═══════════════════════════════════════════════════
-// GRAPH DATA
-// ═══════════════════════════════════════════════════
-const GRAPH_NODES = [
-  // Agents
-  { id: 'win-claude', label: 'Windows\nClaude', type: 'agent', color: '#00d4ff', r: 22, level: 'L1' },
-  { id: 'mac-claude', label: 'Mac\nClaude',     type: 'agent', color: '#00d4ff', r: 20, level: 'L2' },
-  { id: 'minimax',    label: 'MiniMax\n倉',     type: 'agent', color: '#b060ff', r: 16, level: 'L2' },
-  // Systems
-  { id: 'notion',   label: 'Notion',     type: 'system', color: '#3a5070', r: 12 },
-  { id: 'qdm',      label: 'QDM',        type: 'system', color: '#3a5070', r: 12 },
-  { id: 'gw',       label: 'GoWarehouse',type: 'system', color: '#3a5070', r: 12 },
-  { id: 'cf',       label: 'CF Worker',  type: 'system', color: '#3a5070', r: 11 },
-  { id: 'r2',       label: 'R2',         type: 'system', color: '#3a5070', r: 10 },
-  { id: 'line',     label: 'LINE',       type: 'system', color: '#3a5070', r: 10 },
-  { id: 'tg',       label: 'Telegram',   type: 'system', color: '#3a5070', r: 10 },
-  { id: 'gemini',   label: 'Gemini',     type: 'system', color: '#3a5070', r: 10 },
-  { id: 'github',   label: 'GitHub',     type: 'system', color: '#3a5070', r: 10 },
-  // Projects
-  { id: 'p1',  label: '#1\n快速生圖',  type: 'project', status: '運行中',   color: '#00ff88', r: 16 },
-  { id: 'p2',  label: '#2\n社交發布',  type: 'project', status: '過渡中',   color: '#ff8c00', r: 14 },
-  { id: 'p3',  label: '#3\nMiniMax倉', type: 'project', status: '運行中',   color: '#00ff88', r: 14 },
-  { id: 'p4',  label: '#4\nNICOCHAT', type: 'project', status: '進行中',   color: '#1a6fff', r: 12 },
-  { id: 'p5',  label: '#5\n剪片發布',  type: 'project', status: '規劃中',   color: '#ffcc00', r: 12 },
-  { id: 'p7',  label: '#7\n採購彙整',  type: 'project', status: '規劃中',   color: '#ffcc00', r: 11 },
-  { id: 'p10', label: '#10\n爬蟲',     type: 'project', status: '模組完成', color: '#ffcc00', r: 11 },
-  { id: 'p11', label: '#11\nTG情報',   type: 'project', status: '模組完成', color: '#ffcc00', r: 11 },
-  { id: 'p12', label: '#12\n系統整合', type: 'project', status: '進行中',   color: '#1a6fff', r: 13 },
-  { id: 'p15', label: '#15\n廣告客戶', type: 'project', status: '規劃中',   color: '#ffcc00', r: 11 },
-  { id: 'p16', label: '#16\niOS App',  type: 'project', status: '規劃中',   color: '#ffcc00', r: 12 },
-];
-
-const GRAPH_LINKS = [
-  // Agent → System
-  { source: 'win-claude', target: 'notion',    label: '調度' },
-  { source: 'mac-claude', target: 'notion',    label: '任務' },
-  { source: 'minimax',    target: 'notion',    label: '任務' },
-  { source: 'mac-claude', target: 'r2',        label: '上傳' },
-  { source: 'mac-claude', target: 'github',    label: 'push' },
-  { source: 'mac-claude', target: 'gemini',    label: 'API' },
-  { source: 'minimax',    target: 'line',      label: 'LINE Bot' },
-  { source: 'minimax',    target: 'gw',        label: 'API' },
-  { source: 'minimax',    target: 'qdm',       label: 'API' },
-  // Agent → Agent
-  { source: 'win-claude', target: 'mac-claude', label: '派任務' },
-  { source: 'win-claude', target: 'minimax',    label: '派任務' },
-  // System → System
-  { source: 'cf',  target: 'qdm', label: 'Webhook' },
-  { source: 'cf',  target: 'gw',  label: 'Webhook' },
-  // Agent → Project
-  { source: 'mac-claude', target: 'p1',  label: '' },
-  { source: 'mac-claude', target: 'p2',  label: '' },
-  { source: 'minimax',    target: 'p3',  label: '' },
-  { source: 'mac-claude', target: 'p4',  label: '' },
-  { source: 'mac-claude', target: 'p5',  label: '' },
-  { source: 'minimax',    target: 'p7',  label: '' },
-  { source: 'mac-claude', target: 'p10', label: '' },
-  { source: 'mac-claude', target: 'p11', label: '' },
-  { source: 'win-claude', target: 'p12', label: '' },
-  { source: 'mac-claude', target: 'p15', label: '' },
-  { source: 'mac-claude', target: 'p16', label: '' },
-  // Project → System
-  { source: 'p1',  target: 'gemini', label: '' },
-  { source: 'p1',  target: 'r2',     label: '' },
-  { source: 'p2',  target: 'r2',     label: '' },
-  { source: 'p3',  target: 'cf',     label: '' },
-  { source: 'p3',  target: 'gw',     label: '' },
-  { source: 'p11', target: 'tg',     label: '' },
-  { source: 'p10', target: 'notion', label: '' },
-  { source: 'p16', target: 'r2',     label: '' },
-];
-
-// ═══════════════════════════════════════════════════
-// CLOCK
-// ═══════════════════════════════════════════════════
-function clockTick() {
-  const now = new Date();
-  const pad = n => String(n).padStart(2, '0');
-  document.getElementById('clock').textContent =
-    `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-  document.getElementById('clock-date').textContent =
-    `${now.getFullYear()}/${pad(now.getMonth()+1)}/${pad(now.getDate())} TW`;
+function esc(s){return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+// minimal markdown: **bold** and `code` (escape first, safe)
+function md(s){
+  return esc(s)
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/`([^`]+?)`/g,'<code>$1</code>');
 }
 
-// ═══════════════════════════════════════════════════
-// PROJECT LIST RENDERER
-// ═══════════════════════════════════════════════════
-function renderProjectList() {
-  const container = document.getElementById('project-list');
-  const ids = Object.keys(PROJECT_META).map(Number).sort((a,b)=>a-b);
-
-  container.innerHTML = ids.map(num => {
-    const p = PROJECT_META[num];
-    const tagCls = STATUS_TAG_MAP[p.status] || 'none';
-    const avg = Math.round((p.module + p.integ) / 2);
-    return `
-      <div class="proj-item">
-        <div class="proj-top">
-          <span class="proj-id">#${num}</span>
-          <span class="proj-name">${p.name}</span>
-          <span class="proj-pct" style="color:${avg > 60 ? 'var(--green)' : avg > 20 ? 'var(--yellow)' : 'var(--text-dim)'}">${avg}%</span>
-        </div>
-        <div class="prog-row">
-          <span class="prog-label">模組</span>
-          <div class="prog-track"><div class="prog-fill module" style="width:0%" data-w="${p.module}%"></div></div>
-          <span class="prog-num">${p.module}%</span>
-        </div>
-        <div class="prog-row">
-          <span class="prog-label">整合</span>
-          <div class="prog-track"><div class="prog-fill integ" style="width:0%" data-w="${p.integ}%"></div></div>
-          <span class="prog-num">${p.integ}%</span>
-        </div>
-        <div class="proj-tags">
-          <span class="proj-tag ${tagCls}">${p.status}</span>
-          <span class="proj-tag none">${p.executor}</span>
-        </div>
-      </div>`;
-  }).join('');
-
-  // Animate bars
-  setTimeout(() => {
-    document.querySelectorAll('.prog-fill').forEach(el => {
-      el.style.width = el.dataset.w;
-    });
-  }, 100);
+function clockTick(){
+  const n=new Date(), p=x=>String(x).padStart(2,'0');
+  document.getElementById('clock').textContent=`${p(n.getHours())}:${p(n.getMinutes())}`;
 }
 
-// ═══════════════════════════════════════════════════
-// ACTIVITY FEED
-// ═══════════════════════════════════════════════════
-let _allActivity = [];
-let _actFilter = 'all';
-
-// Ignore garbage "審查完成" tasks created by old review loop
-function isGarbage(item) {
-  return item.title && (
-    item.title.startsWith('審查完成：') ||
-    item.title.startsWith('審查完成:')
-  );
+function renderStats(s){
+  const cells=[
+    ['user','待用戶',s.pending_user],
+    ['live','運行中',s.live],
+    ['scoping','規劃',s.scoping],
+    ['done','完成',s.done],
+    ['total','專案',s.total],
+  ];
+  document.getElementById('stats').innerHTML=cells.map(([c,l,n])=>
+    `<div class="stat ${c}"><div class="n">${n??'—'}</div><div class="l">${l}</div></div>`).join('');
 }
 
-function renderActivity(activities) {
-  _allActivity = (activities || []).filter(a => !isGarbage(a));
-  applyActFilter();
-}
-
-function applyActFilter() {
-  let items = _allActivity;
-  if (_actFilter === 'done')   items = items.filter(a => a.status === '完成');
-  if (_actFilter === 'fail')   items = items.filter(a => a.status !== '完成');
-
-  const list = document.getElementById('activity-list');
-
-  if (items.length === 0) {
-    list.innerHTML = '<div style="padding:16px 0;color:var(--text-dim);font-size:11px;text-align:center">暫無記錄</div>';
+function renderUser(items){
+  document.getElementById('user-count').textContent=items.length?`${items.length} 項`:'';
+  if(!items.length){
+    document.getElementById('user-list').innerHTML='<div class="user-card minor"><div class="t">目前沒有卡在你身上的事 ✓</div></div>';
     return;
   }
-
-  list.innerHTML = items.slice(0, 30).map(a => {
-    const isDone = a.status === '完成';
-    const dotCls = isDone ? 'done' : 'failed';
-    const stCls  = isDone ? 'done' : 'failed';
-    const title = a.title.length > 60 ? a.title.substring(0, 60) + '…' : a.title;
-    const date   = a.date ? a.date.substring(5) : '';
-    return `
-      <div class="act-item">
-        <div class="act-dot ${dotCls}"></div>
-        <div class="act-body">
-          <div class="act-title">${title}</div>
-          <div class="act-meta">
-            <span class="act-status ${stCls}">${a.status}</span>
-            <span>${a.executor}</span>
-            <span>${date}</span>
-          </div>
-        </div>
-      </div>`;
+  document.getElementById('user-list').innerHTML=items.map(raw=>{
+    // split "**title**：detail" / "title：detail"
+    let title=raw, detail='';
+    const m=raw.match(/^(.*?)[：:]\s*(.+)$/s);
+    if(m){title=m[1]; detail=m[2];}
+    const minor=/^小事/.test(raw.replace(/\*\*/g,''));
+    return `<div class="user-card ${minor?'minor':''}"><div class="t">${md(title)}</div>${detail?`<div class="d">${md(detail)}</div>`:''}</div>`;
   }).join('');
 }
 
-function filterAct(f) {
-  _actFilter = f;
-  ['all','done','fail'].forEach(k => {
-    document.getElementById('f-'+k).classList.toggle('active', k === f);
-  });
-  applyActFilter();
+function renderProjects(ps){
+  document.getElementById('proj-count').textContent=`${ps.length} 個`;
+  document.getElementById('proj-grid').innerHTML=ps.map(p=>{
+    const tag=p.status_tag||'none';
+    return `<div class="proj ${tag}">
+      <div class="proj-top">
+        <span class="id">#${p.num}</span>
+        <span class="nm">${esc(p.name)}</span>
+        ${p.window&&p.window!=='—'?`<span class="win">窗 ${esc(p.window)}</span>`:''}
+        <span class="badge">${esc(p.status_emoji||'·')}</span>
+      </div>
+      <div class="desc">${md(p.status_text)}</div>
+    </div>`;
+  }).join('');
 }
 
-// ═══════════════════════════════════════════════════
-// MAIN DATA LOADER
-// ═══════════════════════════════════════════════════
-function timeAgo(iso) {
-  if (!iso) return '—';
-  const diff = Math.floor((Date.now() - new Date(iso)) / 1000);
-  if (diff < 60)    return `${diff}秒前`;
-  if (diff < 3600)  return `${Math.floor(diff/60)}分鐘前`;
-  if (diff < 86400) return `${Math.floor(diff/3600)}小時前`;
-  return `${Math.floor(diff/86400)}天前`;
+function renderTeam(team){
+  document.getElementById('team').innerHTML=team.map(t=>
+    `<div class="tm"><span class="dot"></span><div class="info">
+      <div class="nm">${esc(t.name)}</div>
+      <div class="ro">${esc(t.role)}</div>
+      <div class="st">${md(t.state)}</div>
+    </div><span class="lv">${esc(t.level)}</span></div>`).join('');
 }
 
-async function loadData() {
-  try {
-    const r = await fetch(`./data.json?t=${Date.now()}`);
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    const d = await r.json();
+function renderList(id,items){
+  const el=document.getElementById(id);
+  el.innerHTML=(items||[]).map(x=>`<li>${md(x)}</li>`).join('')||'<li>—</li>';
+}
 
-    document.getElementById('stat-pending').textContent    = d.tasks.pending      ?? '—';
-    document.getElementById('stat-inprogress').textContent = d.tasks.in_progress  ?? '—';
-    document.getElementById('stat-failed').textContent     = d.tasks.failed       ?? '—';
-    document.getElementById('stat-completed').textContent  = d.tasks.completed_total ?? '—';
-    document.getElementById('stat-today').textContent      = `今日 ${d.tasks.completed_today ?? 0} 件`;
+function timeAgo(iso){
+  if(!iso) return '—';
+  const diff=Math.floor((Date.now()-new Date(iso))/1000);
+  if(diff<60) return diff+'秒前';
+  if(diff<3600) return Math.floor(diff/60)+'分鐘前';
+  if(diff<86400) return Math.floor(diff/3600)+'小時前';
+  return Math.floor(diff/86400)+'天前';
+}
 
-    renderActivity(d.activity || []);
-
-    document.getElementById('updated-text').textContent =
-      `更新：${timeAgo(d.updated_at)}`;
-
-  } catch (e) {
-    console.error('loadData error', e);
-  } finally {
-    document.getElementById('loading').style.display = 'none';
+async function loadData(){
+  try{
+    const r=await fetch(`./data.json?t=${Date.now()}`);
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const d=await r.json();
+    document.getElementById('err').style.display='none';
+    renderStats(d.stats||{});
+    renderUser(d.pending_user||[]);
+    renderProjects(d.projects||[]);
+    renderTeam(d.team||[]);
+    renderList('prio-list',d.priorities);
+    renderList('snap-list',d.snapshot);
+    if(d.board_updated) document.getElementById('board-date').textContent='看板 '+d.board_updated;
+    document.getElementById('updated').textContent=`資料 ${timeAgo(d.generated_at)} 產出`;
+  }catch(e){
+    const el=document.getElementById('err');
+    el.style.display='block';
+    el.textContent='載入 data.json 失敗：'+e.message;
   }
 }
 
-// ═══════════════════════════════════════════════════
-// D3 FORCE GRAPH
-// ═══════════════════════════════════════════════════
-let simulation, currentFilter = 'all';
-
-function setFilter(f) {
-  currentFilter = f;
-  ['all','active','agents','systems'].forEach(k => {
-    document.getElementById('btn-'+k).classList.toggle('active', k === f);
-  });
-  updateGraph();
-}
-
-function getVisibleNodes() {
-  let nodes = GRAPH_NODES;
-  if (currentFilter === 'active')  nodes = nodes.filter(n => n.type === 'agent' || n.status === '運行中');
-  if (currentFilter === 'agents')  nodes = nodes.filter(n => n.type === 'agent' || n.type === 'system');
-  if (currentFilter === 'systems') nodes = nodes.filter(n => n.type === 'system' || n.type === 'agent');
-  return nodes;
-}
-
-function initGraph() {
-  const svg = d3.select('#graph-svg');
-  svg.selectAll('*').remove();
-
-  const W = svg.node().clientWidth || 600;
-  const H = svg.node().clientHeight || 500;
-
-  // Defs: arrow marker, glow filter
-  const defs = svg.append('defs');
-
-  defs.append('marker')
-    .attr('id', 'arrow')
-    .attr('viewBox', '0 -4 8 8')
-    .attr('refX', 20).attr('refY', 0)
-    .attr('markerWidth', 6).attr('markerHeight', 6)
-    .attr('orient', 'auto')
-    .append('path')
-    .attr('d', 'M0,-4L8,0L0,4')
-    .attr('fill', '#1a4080');
-
-  const glow = defs.append('filter').attr('id', 'glow');
-  glow.append('feGaussianBlur').attr('stdDeviation', 3).attr('result', 'blur');
-  const feMerge = glow.append('feMerge');
-  feMerge.append('feMergeNode').attr('in', 'blur');
-  feMerge.append('feMergeNode').attr('in', 'SourceGraphic');
-
-  const glowStrong = defs.append('filter').attr('id', 'glow-strong');
-  glowStrong.append('feGaussianBlur').attr('stdDeviation', 6).attr('result', 'blur');
-  const feMerge2 = glowStrong.append('feMerge');
-  feMerge2.append('feMergeNode').attr('in', 'blur');
-  feMerge2.append('feMergeNode').attr('in', 'SourceGraphic');
-
-  const container = svg.append('g').attr('class', 'graph-container');
-
-  // Zoom
-  svg.call(d3.zoom()
-    .scaleExtent([0.3, 3])
-    .on('zoom', e => container.attr('transform', e.transform))
-  );
-
-  updateGraph(container, W, H);
-}
-
-function updateGraph(container, W, H) {
-  const svg = d3.select('#graph-svg');
-  if (!container) container = svg.select('.graph-container');
-  if (!W) W = svg.node().clientWidth || 600;
-  if (!H) H = svg.node().clientHeight || 500;
-
-  const visibleNodes = getVisibleNodes();
-  const visibleIds = new Set(visibleNodes.map(n => n.id));
-  const visibleLinks = GRAPH_LINKS.filter(l =>
-    visibleIds.has(l.source.id || l.source) &&
-    visibleIds.has(l.target.id || l.target)
-  );
-
-  // Stop existing simulation
-  if (simulation) simulation.stop();
-
-  // Create node objects preserving positions
-  const nodeMap = {};
-  GRAPH_NODES.forEach(n => { nodeMap[n.id] = n; });
-
-  const nodes = visibleNodes.map(n => ({ ...n }));
-  const links = visibleLinks.map(l => ({
-    ...l,
-    source: l.source.id || l.source,
-    target: l.target.id || l.target,
-  }));
-
-  simulation = d3.forceSimulation(nodes)
-    .force('link', d3.forceLink(links).id(d => d.id).distance(d => {
-      if (d.source.type === 'agent' && d.target.type === 'agent') return 100;
-      if (d.source.type === 'agent' || d.target.type === 'agent') return 90;
-      return 70;
-    }).strength(0.6))
-    .force('charge', d3.forceManyBody().strength(d => d.type === 'agent' ? -200 : -80))
-    .force('center', d3.forceCenter(W/2, H/2))
-    .force('collision', d3.forceCollide(d => d.r + 14))
-    .alphaDecay(0.02);
-
-  // Clear and redraw
-  container.selectAll('.links-g').remove();
-  container.selectAll('.nodes-g').remove();
-
-  const linksG = container.append('g').attr('class', 'links-g');
-  const nodesG = container.append('g').attr('class', 'nodes-g');
-
-  const link = linksG.selectAll('line')
-    .data(links)
-    .join('line')
-    .attr('stroke', d => {
-      const src = d.source.type || '';
-      if (src === 'agent') return '#1a4080';
-      return '#0d2040';
-    })
-    .attr('stroke-width', d => d.source.type === 'agent' ? 1.5 : 0.8)
-    .attr('stroke-opacity', 0.6)
-    .attr('marker-end', 'url(#arrow)');
-
-  const tooltip = document.getElementById('tooltip');
-
-  const node = nodesG.selectAll('g')
-    .data(nodes)
-    .join('g')
-    .attr('class', 'node')
-    .style('cursor', 'pointer')
-    .call(d3.drag()
-      .on('start', (event, d) => {
-        if (!event.active) simulation.alphaTarget(0.3).restart();
-        d.fx = d.x; d.fy = d.y;
-      })
-      .on('drag', (event, d) => { d.fx = event.x; d.fy = event.y; })
-      .on('end', (event, d) => {
-        if (!event.active) simulation.alphaTarget(0);
-        d.fx = null; d.fy = null;
-      })
-    )
-    .on('mouseover', (event, d) => {
-      tooltip.style.display = 'block';
-      let info = `<strong>${d.label.replace('\n', ' ')}</strong>`;
-      if (d.type === 'agent')   info += `<div class="tt-sub">Agent · ${d.level || ''}</div>`;
-      if (d.type === 'project') info += `<div class="tt-sub">狀態: ${d.status}</div>`;
-      if (d.type === 'system')  info += `<div class="tt-sub">外部系統</div>`;
-      if (d.type === 'project' && PROJECT_META[parseInt(d.id.replace('p',''))]) {
-        const pm = PROJECT_META[parseInt(d.id.replace('p',''))];
-        info += `<div class="tt-sub">模組 ${pm.module}% · 整合 ${pm.integ}%</div>`;
-        info += `<div class="tt-sub">${pm.executor}</div>`;
-      }
-      tooltip.innerHTML = info;
-    })
-    .on('mousemove', (event) => {
-      tooltip.style.left = (event.clientX + 14) + 'px';
-      tooltip.style.top  = (event.clientY - 10) + 'px';
-    })
-    .on('mouseout', () => { tooltip.style.display = 'none'; });
-
-  // Circles
-  node.append('circle')
-    .attr('r', d => d.r)
-    .attr('fill', d => {
-      if (d.type === 'agent') return 'rgba(0,180,220,0.1)';
-      if (d.type === 'project') return d.color + '18';
-      return 'rgba(58,80,112,0.15)';
-    })
-    .attr('stroke', d => d.color)
-    .attr('stroke-width', d => d.type === 'agent' ? 1.5 : 1)
-    .attr('filter', d => d.type === 'agent' ? 'url(#glow-strong)' : (d.status === '運行中' ? 'url(#glow)' : 'none'));
-
-  // Pulse ring for agents
-  node.filter(d => d.type === 'agent')
-    .append('circle')
-    .attr('r', d => d.r + 5)
-    .attr('fill', 'none')
-    .attr('stroke', d => d.color)
-    .attr('stroke-width', 0.5)
-    .attr('stroke-opacity', 0.3)
-    .attr('stroke-dasharray', '3,3');
-
-  // Labels
-  node.append('text')
-    .attr('text-anchor', 'middle')
-    .attr('dominant-baseline', 'central')
-    .attr('fill', d => d.type === 'agent' ? '#d8f0ff' : d.type === 'system' ? '#3a5070' : d.color)
-    .attr('font-family', "'JetBrains Mono', monospace")
-    .attr('font-size', d => d.type === 'agent' ? 9 : 8)
-    .attr('font-weight', d => d.type === 'agent' ? '700' : '400')
-    .each(function(d) {
-      const lines = d.label.split('\n');
-      const el = d3.select(this);
-      if (lines.length === 1) {
-        el.text(lines[0]);
-      } else {
-        el.append('tspan').attr('x', 0).attr('dy', '-0.5em').text(lines[0]);
-        el.append('tspan').attr('x', 0).attr('dy', '1.1em').text(lines[1]);
-      }
-    });
-
-  simulation.on('tick', () => {
-    link
-      .attr('x1', d => d.source.x)
-      .attr('y1', d => d.source.y)
-      .attr('x2', d => d.target.x)
-      .attr('y2', d => d.target.y);
-
-    node.attr('transform', d => `translate(${d.x},${d.y})`);
-  });
-}
-
-// ═══════════════════════════════════════════════════
-// GRAPH ROTATION (CSS 3D perspective)
-// ═══════════════════════════════════════════════════
-let rotX = 20, rotY = 0;
-let autoRotate = false;
-let autoRotateRAF = null;
-
-function applyRotation() {
-  const svg = document.getElementById('graph-svg');
-  if (!svg) return;
-  svg.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
-  const readout = document.getElementById('rot-readout');
-  if (readout) readout.textContent = `X:${Math.round(rotX)}° Y:${Math.round(rotY)}°`;
-}
-
-function resetRotation() {
-  rotX = 20; rotY = 0;
-  applyRotation();
-}
-
-function toggleAutoRotate() {
-  autoRotate = !autoRotate;
-  document.getElementById('autorot-btn').textContent = autoRotate ? '■ 停止' : '▶ 自轉';
-  if (autoRotate) {
-    const tick = () => {
-      if (!autoRotate) return;
-      rotY = (rotY + 0.25) % 360;
-      applyRotation();
-      autoRotateRAF = requestAnimationFrame(tick);
-    };
-    tick();
-  } else {
-    if (autoRotateRAF) cancelAnimationFrame(autoRotateRAF);
-  }
-}
-
-function initRotationDrag() {
-  const svg = document.getElementById('graph-svg');
-  if (!svg) return;
-
-  let isDragging = false;
-  let startX = 0, startY = 0;
-  let startRotX = 0, startRotY = 0;
-
-  // Only rotate when Shift held — otherwise let D3 node drag work
-  svg.addEventListener('mousedown', (e) => {
-    if (!e.shiftKey) return;
-    e.preventDefault();
-    e.stopPropagation();
-    isDragging = true;
-    svg.classList.add('dragging');
-    startX = e.clientX; startY = e.clientY;
-    startRotX = rotX; startRotY = rotY;
-    if (autoRotate) toggleAutoRotate();
-  }, true);
-
-  window.addEventListener('mousemove', (e) => {
-    if (!isDragging) return;
-    const dx = e.clientX - startX;
-    const dy = e.clientY - startY;
-    rotY = startRotY + dx * 0.4;
-    rotX = Math.max(-85, Math.min(85, startRotX - dy * 0.4));
-    applyRotation();
-  });
-
-  window.addEventListener('mouseup', () => {
-    if (isDragging) {
-      isDragging = false;
-      svg.classList.remove('dragging');
-    }
-  });
-
-  applyRotation();
-}
-
-// ═══════════════════════════════════════════════════
-// VOICE CONTROL
-// ═══════════════════════════════════════════════════
-let recognition = null;
-let isListening = false;
-
-function toggleVoice() {
-  if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-    document.getElementById('voice-status').textContent = 'VOICE: NOT SUPPORTED';
-    return;
-  }
-
-  if (isListening) {
-    recognition.stop();
-    return;
-  }
-
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  recognition = new SpeechRecognition();
-  recognition.lang = 'zh-TW';
-  recognition.continuous = false;
-  recognition.interimResults = false;
-
-  recognition.onstart = () => {
-    isListening = true;
-    document.getElementById('voice-btn').classList.add('listening');
-    document.getElementById('voice-status').textContent = 'VOICE: LISTENING…';
-    document.getElementById('voice-status').classList.add('active');
-  };
-
-  recognition.onresult = (e) => {
-    const cmd = e.results[0][0].transcript;
-    handleVoiceCmd(cmd);
-  };
-
-  recognition.onerror = recognition.onend = () => {
-    isListening = false;
-    document.getElementById('voice-btn').classList.remove('listening');
-    document.getElementById('voice-status').textContent = 'VOICE: READY';
-    document.getElementById('voice-status').classList.remove('active');
-  };
-
-  recognition.start();
-}
-
-function handleVoiceCmd(cmd) {
-  const s = cmd.toLowerCase();
-  document.getElementById('voice-status').textContent = `CMD: ${cmd}`;
-
-  if (s.includes('刷新') || s.includes('重新整理') || s.includes('更新')) {
-    loadData();
-  } else if (s.includes('失敗')) {
-    filterAct('fail');
-  } else if (s.includes('完成')) {
-    filterAct('done');
-  } else if (s.includes('全部') || s.includes('全顯示')) {
-    filterAct('all');
-  } else if (s.includes('agent') || s.includes('助理')) {
-    setFilter('agents');
-  } else if (s.includes('運行') || s.includes('active')) {
-    setFilter('active');
-  } else if (s.includes('系統')) {
-    setFilter('systems');
-  } else if (s.includes('重置') || s.includes('全圖')) {
-    setFilter('all');
-  } else if (s.includes('自轉') || s.includes('旋轉')) {
-    toggleAutoRotate();
-  } else if (s.includes('視角')) {
-    resetRotation();
-  }
-
-  setTimeout(() => {
-    document.getElementById('voice-status').textContent = 'VOICE: READY';
-  }, 2500);
-}
-
-// ═══════════════════════════════════════════════════
-// INIT
-// ═══════════════════════════════════════════════════
-setInterval(clockTick, 1000);
-clockTick();
-
-renderProjectList();
-
-window.addEventListener('load', () => {
-  setTimeout(() => {
-    initGraph();
-    initRotationDrag();
-    loadData();
-  }, 200);
-});
-
-setInterval(loadData, 5 * 60 * 1000);
-
-// Resize
-window.addEventListener('resize', () => {
-  initGraph();
-});
+setInterval(clockTick,1000); clockTick();
+loadData();
+setInterval(loadData,5*60*1000);
 </script>
 </body>
 </html>

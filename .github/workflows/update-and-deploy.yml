@@ -8,6 +8,7 @@ on:
     paths:
       - 'index.html'
       - 'fetch_data.py'
+      - '派工看板.md'
   workflow_dispatch:
 
 permissions:
@@ -29,21 +30,18 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
-        run: pip install requests
-
-      - name: Fetch Notion data
+      # Parse 派工看板.md (synced from the private brain repo) into data.json.
+      # Pure stdlib — no network, no Notion, no secrets.
+      - name: Build data.json from 派工看板.md
         run: python fetch_data.py
         env:
-          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          BOARD_PATH: 派工看板.md
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

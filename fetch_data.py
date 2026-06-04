@@ -1,138 +1,195 @@
 #!/usr/bin/env python3
-"""Fetch Notion task data for NICOCODAILY Dashboard."""
+"""Build dashboard data.json by parsing 派工看板.md (the orchestration board).
+
+Single source of truth: ~/nicocodaily-brain/派工看板.md (see CLAUDE.md 鐵則).
+No Notion, no network — pure stdlib markdown parsing so it runs identically on
+the VPS and inside the GitHub Pages Action (which gets a synced copy of the md
+in the same directory as this script).
+
+Board path resolution order:
+  1. $BOARD_PATH env
+  2. ./派工看板.md  (synced copy next to this script — used in CI)
+  3. ../../派工看板.md  (brain repo root — used on the VPS)
+"""
 
 import os
+import re
 import json
-import requests
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
-NOTION_TOKEN = os.environ.get("NOTION_TOKEN", "")
-DATABASE_ID = "ea19337c2d8540fb8948f52a5bd16ca0"
+HERE = Path(__file__).resolve().parent
 
-HEADERS = {
-    "Authorization": f"Bearer {NOTION_TOKEN}",
-    "Notion-Version": "2022-06-28",
-    "Content-Type": "application/json",
-}
 
-PROJECTS = [
-    {"num": 1,  "name": "快速生圖",       "status": "運行中",   "executor": "Mac Claude",     "desc": "圖片生成 API，內容生產管線"},
-    {"num": 2,  "name": "發布",           "status": "過渡中",   "executor": "Mac Claude",     "desc": "待併入 #5 剪片+發布"},
-    {"num": 3,  "name": "MiniMax 倉庫",   "status": "運行中",   "executor": "MiniMax",        "desc": "CF Worker 橋接，QDM↔GW webhook"},
-    {"num": 4,  "name": "NICOCHAT",       "status": "進行中",   "executor": "Mobile Claude",  "desc": "客服/CRM 層，AI 客服助理"},
-    {"num": 5,  "name": "剪片+發布",      "status": "規劃中",   "executor": "Mac Claude",     "desc": "剪片自動化 + 社群發布"},
-    {"num": 6,  "name": "VTO 換衣",       "status": "0%",       "executor": "Windows Claude", "desc": "虛擬試穿，成長工具層"},
-    {"num": 7,  "name": "採購彙整",       "status": "0%",       "executor": "MiniMax",        "desc": "接 LINE/倉庫系統"},
-    {"num": 8,  "name": "AI 投資",        "status": "待定",     "executor": "Windows Claude", "desc": "高風險，需人工監督"},
-    {"num": 9,  "name": "AI 廣告投放",    "status": "規劃中",   "executor": "Windows Claude", "desc": "Meta API，成長工具層"},
-    {"num": 10, "name": "爬蟲市調",       "status": "完成",     "executor": "Mac Claude",     "desc": "nicocodaily.com 202 連結已分析"},
-    {"num": 11, "name": "TG 情報入口",    "status": "完成",     "executor": "Mac Claude",     "desc": "Telegram Bot 摘要分類路由"},
-    {"num": 12, "name": "系統整合",       "status": "進行中",   "executor": "Windows Claude", "desc": "L1/L2/L3 架構建設"},
-    {"num": 13, "name": "AI 藝術庫",      "status": "規劃中",   "executor": "Mac Claude",     "desc": "收集背景/模特兒/服飾素材"},
+def find_board():
+    env = os.environ.get("BOARD_PATH")
+    candidates = [Path(env)] if env else []
+    candidates += [HERE / "派工看板.md", HERE.parent.parent / "派工看板.md"]
+    for c in candidates:
+        if c.is_file():
+            return c
+    raise FileNotFoundError(
+        "派工看板.md not found. Set BOARD_PATH or place it next to fetch_data.py. "
+        f"Looked in: {[str(c) for c in candidates]}"
+    )
+
+
+# Status emoji -> (tag, human label). Order matters: check most-specific first.
+STATUS_MAP = [
+    ("🟢🟢", "live",    "已上線"),
+    ("🟢",   "live",    "運行中"),
+    ("🟡",   "partial", "部分完成"),
+    ("🔵",   "scoping", "規劃中"),
+    ("🔴",   "urgent",  "需處理"),
+    ("✅",   "done",    "完成"),
+    ("❌",   "killed",  "已廢除"),
+    ("⏸️",   "paused",  "暫停"),
+    ("⏸",    "paused",  "暫停"),
 ]
 
 
-def query_all_tasks():
-    url = f"https://api.notion.com/v1/databases/{DATABASE_ID}/query"
-    all_results = []
-    cursor = None
-    while True:
-        body = {"page_size": 100}
-        if cursor:
-            body["start_cursor"] = cursor
-        res = requests.post(url, headers=HEADERS, json=body, timeout=15)
-        data = res.json()
-        all_results.extend(data.get("results", []))
-        if not data.get("has_more"):
-            break
-        cursor = data.get("next_cursor")
-    return all_results
+def classify(status_cell):
+    for emoji, tag, label in STATUS_MAP:
+        if emoji in status_cell:
+            return emoji, tag, label
+    return "", "none", ""
 
 
-def query_recent_activity(limit=10):
-    url = f"https://api.notion.com/v1/databases/{DATABASE_ID}/query"
-    body = {
-        "page_size": limit,
-        "filter": {"or": [
-            {"property": "狀態", "select": {"equals": "完成"}},
-            {"property": "狀態", "select": {"equals": "失敗"}},
-        ]},
-        "sorts": [{"property": "完成時間", "direction": "descending"}],
+def split_rows(cell_line):
+    # "| a | b | c |" -> ["a", "b", "c"]
+    parts = [c.strip() for c in cell_line.strip().strip("|").split("|")]
+    return parts
+
+
+def is_separator(cells):
+    return all(re.fullmatch(r":?-+:?", c or "-") for c in cells)
+
+
+def parse(md_path):
+    text = md_path.read_text(encoding="utf-8")
+    lines = text.splitlines()
+
+    # ── frontmatter ──
+    board_updated = ""
+    maintainer = ""
+    fm = re.search(r"^---\n(.*?)\n---", text, re.S | re.M)
+    if fm:
+        for ln in fm.group(1).splitlines():
+            if ln.startswith("updated:"):
+                board_updated = ln.split(":", 1)[1].strip()
+            elif ln.startswith("maintainer:"):
+                maintainer = ln.split(":", 1)[1].strip()
+
+    # ── walk sections ──
+    section = None
+    projects = []
+    pending_user = []
+    priorities = []
+    snapshot = []
+    builder_lines = []
+    coco_line = ""
+
+    for ln in lines:
+        h = re.match(r"^##\s+(.*)$", ln)
+        if h:
+            title = h.group(1)
+            if "全專案狀態" in title:
+                section = "projects"
+            elif "待用戶" in title:
+                section = "pending"
+            elif "開工優先" in title:
+                section = "priorities"
+            elif "進度快照" in title:
+                section = "snapshot"
+            elif "小建" in title:
+                section = "builder"
+            elif "可可" in title:
+                section = "coco"
+                coco_line = re.sub(r"^[🐚\s]*(可可[:：])?", "", title).strip()
+            else:
+                section = None
+            continue
+
+        s = ln.strip()
+        if section == "projects" and s.startswith("|"):
+            cells = split_rows(ln)
+            if len(cells) < 4:
+                continue
+            if is_separator(cells):
+                continue
+            if not re.match(r"^\d+$", cells[0]):  # header row ("#")
+                continue
+            status_cell = cells[3]
+            emoji, tag, label = classify(status_cell)
+            projects.append({
+                "num": int(cells[0]),
+                "name": cells[1],
+                "window": cells[2],
+                "status_text": status_cell,
+                "status_emoji": emoji,
+                "status_tag": tag,
+                "status_label": label,
+            })
+        elif section == "pending" and s.startswith("- "):
+            pending_user.append(s[2:].strip())
+        elif section == "priorities":
+            m = re.match(r"^\d+\.\s+(.*)$", s)
+            if m:
+                priorities.append(m.group(1).strip())
+        elif section == "snapshot" and s.startswith("- "):
+            snapshot.append(s[2:].strip())
+        elif section == "builder" and s.startswith("- "):
+            builder_lines.append(s[2:].strip())
+
+    # ── team (real current roster, not the dead Mac/MiniMax) ──
+    xiaojian_state = next(
+        (b for b in builder_lines if "跑中" in b or "feat/" in b),
+        builder_lines[0] if builder_lines else "待命",
+    )
+    team = [
+        {"name": "L1 Windows Claude", "role": "決策 / 派工 / 審 code", "level": "L1", "state": "在主窗"},
+        {"name": "小建 (VPS)", "role": "L2 雲端工程 · 24/7", "level": "L2", "state": xiaojian_state},
+        {"name": "可可", "role": "LINE 倉助", "level": "OPS", "state": coco_line or "LINE 倉助上線"},
+    ]
+
+    # ── glance stats ──
+    counts = {}
+    for p in projects:
+        counts[p["status_tag"]] = counts.get(p["status_tag"], 0) + 1
+    stats = {
+        "pending_user": len(pending_user),
+        "live": counts.get("live", 0),
+        "scoping": counts.get("scoping", 0),
+        "done": counts.get("done", 0),
+        "urgent": counts.get("urgent", 0),
+        "total": len(projects),
     }
-    res = requests.post(url, headers=HEADERS, json=body, timeout=15)
-    return res.json().get("results", [])
 
-
-def get_prop_text(props, key):
-    prop = props.get(key, {})
-    ptype = prop.get("type", "")
-    if ptype == "title":
-        return "".join(t.get("plain_text", "") for t in prop.get("title", []))
-    if ptype == "rich_text":
-        return "".join(t.get("plain_text", "") for t in prop.get("rich_text", []))
-    if ptype == "select":
-        sel = prop.get("select") or {}
-        return sel.get("name", "")
-    if ptype == "date":
-        dt = prop.get("date") or {}
-        return dt.get("start", "")
-    return ""
+    now_tz = datetime.now(timezone(timedelta(hours=8)))
+    return {
+        "generated_at": now_tz.isoformat(),
+        "board_updated": board_updated,
+        "maintainer": maintainer,
+        "stats": stats,
+        "projects": projects,
+        "pending_user": pending_user,
+        "priorities": priorities,
+        "snapshot": snapshot,
+        "team": team,
+    }
 
 
 def main():
-    now_tz = datetime.now(timezone(timedelta(hours=8)))
-
-    tasks = query_all_tasks()
-    from collections import Counter
-    status_counts = Counter()
-    today = now_tz.strftime("%Y-%m-%d")
-    completed_today = 0
-
-    for t in tasks:
-        p = t["properties"]
-        status = get_prop_text(p, "狀態")
-        status_counts[status] += 1
-        if status == "完成":
-            dt = get_prop_text(p, "完成時間")
-            if dt and dt.startswith(today):
-                completed_today += 1
-
-    activity_raw = query_recent_activity(10)
-    activity = []
-    for t in activity_raw:
-        p = t["properties"]
-        title = get_prop_text(p, "任務")
-        status = get_prop_text(p, "狀態")
-        executor = get_prop_text(p, "執行者")
-        date = get_prop_text(p, "完成時間")
-        if title:
-            activity.append({
-                "title": title,
-                "status": status,
-                "executor": executor,
-                "date": date,
-            })
-
-    data = {
-        "updated_at": now_tz.isoformat(),
-        "tasks": {
-            "pending": status_counts.get("待執行", 0),
-            "in_progress": status_counts.get("進行中", 0),
-            "failed": status_counts.get("失敗", 0),
-            "completed_today": completed_today,
-            "completed_total": status_counts.get("完成", 0),
-        },
-        "projects": PROJECTS,
-        "activity": activity,
-    }
-
-    out = Path(__file__).parent / "data.json"
-    out.write_text(json.dumps(data, ensure_ascii=False, indent=2))
-    print(f"data.json updated: pending={data['tasks']['pending']} "
-          f"in_progress={data['tasks']['in_progress']} "
-          f"failed={data['tasks']['failed']} "
-          f"completed={data['tasks']['completed_total']}")
+    board = find_board()
+    data = parse(board)
+    out = HERE / "data.json"
+    out.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(
+        f"data.json built from {board.name}: "
+        f"{data['stats']['total']} projects, "
+        f"{data['stats']['pending_user']} pending-user items, "
+        f"board updated {data['board_updated']}"
+    )
 
 
 if __name__ == "__main__":
