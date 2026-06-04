@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-04T17:40:02.378358+08:00",
+  "generated_at": "2026-06-04T18:00:03.209002+08:00",
   "board_updated": "2026-06-03",
   "maintainer": "L1 (Windows Claude / #12 總指揮)",
   "stats": {
@@ -132,7 +132,7 @@
       "num": 14,
       "name": "遊戲",
       "window": "10",
-      "status_text": "🟢 M0 merged(18英靈+戰鬥/五行/養成);⚠️**待你開 Godot 驗 GDScript**",
+      "status_text": "🟢 M0 **已驗**(VPS Godot4.3 headless:8 .gd 編譯OK + 30/30測試過 + 戰鬥跑通);UI=M1",
       "status_emoji": "🟢",
       "status_tag": "live",
       "status_label": "運行中"
