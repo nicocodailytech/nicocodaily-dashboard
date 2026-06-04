@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-04T19:40:02.846141+08:00",
+  "generated_at": "2026-06-04T20:00:02.877143+08:00",
   "board_updated": "2026-06-04",
   "maintainer": "L1 (Windows Claude / #12 總指揮)",
   "stats": {
@@ -24,7 +24,7 @@
       "num": 2,
       "name": "social-v2",
       "window": "01+小建",
-      "status_text": "🟢 **Phase 1 LIVE**（`api.nicocodailybasic.com`）；棄 Expo → 網頁審核頁 feat/web-review+密碼閘（做中→部署）",
+      "status_text": "🟢 **LIVE 引擎/後端**；/review + /app 都上線(密碼閘)；worker 暫關(不誤發 IG/FB)",
       "status_emoji": "🟢",
       "status_tag": "live",
       "status_label": "運行中"
@@ -150,14 +150,14 @@
       "num": 16,
       "name": "Review App",
       "window": "01",
-      "status_text": "🟢 Scene A live；Scene B + 1b done；待接真 API（#2 已 LIVE，可接）",
+      "status_text": "🟢 **完整 App 上線** api.../app（密碼閘，外網驗過）；接真 API ✅；待用戶測 → 收 /review",
       "status_emoji": "🟢",
       "status_tag": "live",
       "status_label": "運行中"
     }
   ],
   "pending_user": [
-    "**#2 審核頁**：棄 Expo，改網頁版（feat/web-review + 密碼閘，做中→我部署）；好了把網址+密碼敲你直接開",
+    "**#16 已上線，待你測**：開 https://api.nicocodailybasic.com/app（nicoco / 59284637）→ 順了我就收掉 /review 墊檔頁",
     "**#6 VTO MVQ 料**：fashn.ai key + 1–2 張樣本自拍 + 幾件商品圖 → 我跑試穿、你盲評",
     "**#14 開 Godot 驗 GDScript**：看語法紅字 / 跑 tests / 開戰報，有錯貼我修"
   ],
