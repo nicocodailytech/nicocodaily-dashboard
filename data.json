@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-06-04T20:20:02.431369+08:00",
+  "generated_at": "2026-06-04T20:40:02.587457+08:00",
   "board_updated": "2026-06-04",
   "maintainer": "L1 (Windows Claude / #12 總指揮)",
   "stats": {
-    "pending_user": 3,
+    "pending_user": 4,
     "live": 8,
     "scoping": 1,
     "done": 3,
@@ -42,7 +42,7 @@
       "num": 4,
       "name": "NICOCHAT",
       "window": "03",
-      "status_text": "🟢 **6 critical 安全洞已修+驗證+merged**(f6bf137)；剩 pin bcrypt<4.1 + 非critical audit",
+      "status_text": "🟢 安全洞 merged；**LAUNCH_PLAN 備妥**；今晚 prep 跑；待用戶拍板(範圍/租戶)→ 上線",
       "status_emoji": "🟢",
       "status_tag": "live",
       "status_label": "運行中"
@@ -150,14 +150,15 @@
       "num": 16,
       "name": "Review App",
       "window": "01",
-      "status_text": "🟢 **完整 App 上線** api.../app（密碼閘，外網驗過）；接真 API ✅；待用戶測 → 收 /review",
+      "status_text": "🟢 **web 完整**：Posts預設/影片代理/密碼閘，外網驗過；待用戶強制重整測 → 收 /review",
       "status_emoji": "🟢",
       "status_tag": "live",
       "status_label": "運行中"
     }
   ],
   "pending_user": [
-    "**#16 已上線，待你測**：開 https://api.nicocodailybasic.com/app（nicoco / 59284637）→ 順了我就收掉 /review 墊檔頁",
+    "**#16 web 完整(含影片),待你強制重整測**：/app（nicoco / 59284637）→ Posts 頁看縮圖+播影片；順了收 /review",
+    "**#4 上線拍板**：範圍 A(內部+社群) 或 B(含客人 widget)？單品牌 or 多租戶？(其餘預設 chat 子網域/SQLite/軟啟動)",
     "**#6 VTO MVQ 料**：fashn.ai key + 1–2 張樣本自拍 + 幾件商品圖 → 我跑試穿、你盲評",
     "**#14 開 Godot 驗 GDScript**：看語法紅字 / 跑 tests / 開戰報，有錯貼我修"
   ],
