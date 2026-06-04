@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-06-04T17:00:02.779490+08:00",
+  "generated_at": "2026-06-04T17:01:03.654517+08:00",
   "board_updated": "2026-06-03",
   "maintainer": "L1 (Windows Claude / #12 總指揮)",
   "stats": {
-    "pending_user": 5,
-    "live": 5,
+    "pending_user": 3,
+    "live": 6,
     "scoping": 1,
     "done": 4,
     "urgent": 1,
@@ -85,12 +85,12 @@
     },
     {
       "num": 9,
-      "name": "Meta ETL",
-      "window": "07",
-      "status_text": "🟡 免 token 準備好；**待你 Meta token** 才真實跑",
-      "status_emoji": "🟡",
-      "status_tag": "partial",
-      "status_label": "部分完成"
+      "name": "廣告分析",
+      "window": "MCP",
+      "status_text": "🟢 Meta Ads MCP 已連線（可直接做廣告分析）；自架 ETL=選配備援",
+      "status_emoji": "🟢",
+      "status_tag": "live",
+      "status_label": "運行中"
     },
     {
       "num": 10,
@@ -159,9 +159,7 @@
   "pending_user": [
     "**#2 reload Expo 驗收**：後端已 LIVE，`npx expo start -c` → 看 K00250F 那篇待審、試核可",
     "**#6 VTO MVQ 料**：fashn.ai key + 1–2 張樣本自拍 + 幾件商品圖 → 我跑試穿、你盲評",
-    "**#9 Meta token**：Meta System User Token → #9 ETL 才能真實抓資料",
-    "**本機 CLI（選配）**：你自己終端機跑 `claude login` 授權 → 我才能驅動本機 headless",
-    "**JNBOT**：BotFather 刪掉（VPS 無依賴，安全）"
+    "**#14 開 Godot 驗 GDScript**：看語法紅字 / 跑 tests / 開戰報，有錯貼我修"
   ],
   "priorities": [],
   "snapshot": [],
