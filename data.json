@@ -1,13 +1,13 @@
 {
-  "generated_at": "2026-06-04T17:20:06.556460+08:00",
+  "generated_at": "2026-06-04T17:22:56.325642+08:00",
   "board_updated": "2026-06-03",
   "maintainer": "L1 (Windows Claude / #12 總指揮)",
   "stats": {
     "pending_user": 3,
-    "live": 6,
+    "live": 7,
     "scoping": 1,
     "done": 4,
-    "urgent": 1,
+    "urgent": 0,
     "total": 16
   },
   "projects": [
@@ -105,10 +105,10 @@
       "num": 11,
       "name": "TG 情報",
       "window": "05",
-      "status_text": "🔴 recon 發現程式壞；待 L1 修 3 行 + 搬 VPS",
-      "status_emoji": "🔴",
-      "status_tag": "urgent",
-      "status_label": "需處理"
+      "status_text": "🟢 P0 修復 merged(本機 headless 派工)；下步：搬 VPS + 填 Notion IDs",
+      "status_emoji": "🟢",
+      "status_tag": "live",
+      "status_label": "運行中"
     },
     {
       "num": 12,
