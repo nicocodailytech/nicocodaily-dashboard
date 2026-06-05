@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-05T22:00:02.914239+08:00",
+  "generated_at": "2026-06-05T22:40:02.674728+08:00",
   "board_updated": "2026-06-05",
   "maintainer": "L1 (Windows Claude / #12 總指揮)",
   "stats": {
@@ -24,7 +24,7 @@
       "num": 2,
       "name": "social-v2",
       "window": "01+小建",
-      "status_text": "🟢 **發布上線**;/app(密碼閘);**Meta 永久 token、nicoco/basic/men's FB+IG 全接、worker 已開**;測試文待用戶 #16 核准實測;men's 自動分(category 242)派小建中;待補 basic-IG 連結、Threads token",
+      "status_text": "🟢 **發布上線**;/app(密碼閘);**Meta 永久 token、nicoco/basic/men's FB+IG 全接、worker 已開**;測試文待用戶 #16 核准實測;**men's 自動分 merged(category 242)**;待補 basic-IG 連結、Threads token",
       "status_emoji": "🟢",
       "status_tag": "live",
       "status_label": "運行中"
@@ -87,7 +87,7 @@
       "num": 9,
       "name": "廣告分析",
       "window": "MCP",
-      "status_text": "🟢 Meta Ads MCP 已連線（可直接做廣告分析）；自架 ETL=選配備援",
+      "status_text": "🟢 Meta Ads MCP 已連線;**AI 行為規則 v1 入 git**(來源透明/3.4唯讀/自我懷疑);**QDM 真實營收工具 merged**(qdm_revenue.py 只讀 /orders→真 ROAS,對廣告用 utm_source+utm_campaign);自架 ETL=備援",
       "status_emoji": "🟢",
       "status_tag": "live",
       "status_label": "運行中"
@@ -132,7 +132,7 @@
       "num": 14,
       "name": "遊戲",
       "window": "10",
-      "status_text": "🟢 **M1 merged**(可玩戰鬥畫面:5v5卡/HP能量條/逐回合/必殺;headless 30/30+15/15 過);待用戶開 Godot 肉眼驗像素層+定動畫/2倍速",
+      "status_text": "🟢 **M1 merged + 網頁版上線**(game.nicocodailybasic.com,systemd game-serve;5v5戰鬥;headless 30/30+15/15 過);待用戶玩看看+定動畫/2倍速",
       "status_emoji": "🟢",
       "status_tag": "live",
       "status_label": "運行中"
@@ -160,7 +160,7 @@
     "**#2 測發文**：#16 核准 men's(id4)/basic(id5) 純 FB 測試文 → 看發到 FB → 刪;OK 後我加 IG 測試",
     "**#16 web 完整,待你強制重整測**：/app（nicoco / 59284637）→ Posts 頁看縮圖+播影片；順了收 /review",
     "**#6 VTO MVQ 料**：fashn.ai key + 1–2 張樣本自拍 + 幾件商品圖 → 我跑試穿、你盲評",
-    "**#14 開 Godot 看 M1 戰鬥畫面**：版面/發光/點擊手感(headless 驗不到像素);要不要加動畫/2倍速"
+    "**#14 看 M1 戰鬥(已上網頁版)**:game.nicocodailybasic.com(帳密見 .secrets/game-web-auth.env)→ 看版面/手感;要不要加動畫/2倍速"
   ],
   "priorities": [],
   "snapshot": [],
