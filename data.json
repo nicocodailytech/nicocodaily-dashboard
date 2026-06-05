@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-06-05T18:00:03.589199+08:00",
-  "board_updated": "2026-06-04",
+  "generated_at": "2026-06-05T18:20:03.141949+08:00",
+  "board_updated": "2026-06-05",
   "maintainer": "L1 (Windows Claude / #12 總指揮)",
   "stats": {
-    "pending_user": 4,
+    "pending_user": 7,
     "live": 8,
     "scoping": 1,
     "done": 3,
@@ -15,7 +15,7 @@
       "num": 1,
       "name": "生圖 Closet",
       "window": "02",
-      "status_text": "🟡 doc done；model 實測(3-pro 活 / Vertex fallback 死)；重整排 #2 後",
+      "status_text": "🟡 model 實測(3-pro 活 / Vertex fallback 死)；重整排 #2 後；**重整文件兩版衝突待用戶選版**(L1版 on master / 小建版 on feat/restructure-step,_attic 死碼歸檔待挑)",
       "status_emoji": "🟡",
       "status_tag": "partial",
       "status_label": "部分完成"
@@ -24,7 +24,7 @@
       "num": 2,
       "name": "social-v2",
       "window": "01+小建",
-      "status_text": "🟢 **LIVE 引擎/後端**；/app 上線(密碼閘)；**Meta 發文 token 接通**(SYSTEM_USER 永久；nicoco FB+IG、basic FB；dry-run 過)；worker 暫關待上線開關；待補 basic-IG 連結 + men's tenant",
+      "status_text": "🟢 **發布上線**;/app(密碼閘);**Meta 永久 token、nicoco/basic/men's FB+IG 全接、worker 已開**;測試文待用戶 #16 核准實測;待補 basic-IG 連結、men's 自動匯入(QDM)、Threads token",
       "status_emoji": "🟢",
       "status_tag": "live",
       "status_label": "運行中"
@@ -78,7 +78,7 @@
       "num": 8,
       "name": "AI 投資",
       "window": "09",
-      "status_text": "🟢 Phase1 回測引擎 merged(17測過/防look-ahead);輸SPY=誠實baseline;下步 point-in-time+zipline(Go/No-Go)",
+      "status_text": "🟢 **Phase2 merged**(PIT 成分+walk-forward OOS+Deflated Sharpe,34測過);誠實判決 **No-Go**(動量輸SPY,DSR 0.72<0.95);缺口=下市股價(付費源);永不自動下單",
       "status_emoji": "🟢",
       "status_tag": "live",
       "status_label": "運行中"
@@ -132,7 +132,7 @@
       "num": 14,
       "name": "遊戲",
       "window": "10",
-      "status_text": "🟢 M0 **已驗**(VPS Godot4.3 headless:8 .gd 編譯OK + 30/30測試過 + 戰鬥跑通);UI=M1",
+      "status_text": "🟢 **M1 merged**(可玩戰鬥畫面:5v5卡/HP能量條/逐回合/必殺;headless 30/30+15/15 過);待用戶開 Godot 肉眼驗像素層+定動畫/2倍速",
       "status_emoji": "🟢",
       "status_tag": "live",
       "status_label": "運行中"
@@ -157,10 +157,13 @@
     }
   ],
   "pending_user": [
-    "**#16 web 完整(含影片),待你強制重整測**：/app（nicoco / 59284637）→ Posts 頁看縮圖+播影片；順了收 /review",
+    "**#2 測發文**：#16 核准 men's(id4)/basic(id5) 純 FB 測試文 → 看發到 FB → 刪;OK 後我加 IG 測試",
+    "**#2 men's QDM**:men's 有獨立 QDM 倉嗎?有→給帳密我接自動匯入;沒有→手動發",
+    "**#1 重整選版**:文件兩版(L1版 on master / 小建版 on 分支,皆合理)→ 你選留哪版;死碼歸檔(_attic)我再單獨挑過來",
+    "**#16 web 完整,待你強制重整測**：/app（nicoco / 59284637）→ Posts 頁看縮圖+播影片；順了收 /review",
     "**#4 上線拍板**：範圍 A(內部+社群) 或 B(含客人 widget)？單品牌 or 多租戶？(其餘預設 chat 子網域/SQLite/軟啟動)",
     "**#6 VTO MVQ 料**：fashn.ai key + 1–2 張樣本自拍 + 幾件商品圖 → 我跑試穿、你盲評",
-    "**#14 開 Godot 驗 GDScript**：看語法紅字 / 跑 tests / 開戰報，有錯貼我修"
+    "**#14 開 Godot 看 M1 戰鬥畫面**：版面/發光/點擊手感(headless 驗不到像素);要不要加動畫/2倍速"
   ],
   "priorities": [],
   "snapshot": [],
