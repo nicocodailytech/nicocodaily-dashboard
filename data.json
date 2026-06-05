@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-05T16:20:02.698785+08:00",
+  "generated_at": "2026-06-05T16:40:02.788253+08:00",
   "board_updated": "2026-06-04",
   "maintainer": "L1 (Windows Claude / #12 總指揮)",
   "stats": {
@@ -24,7 +24,7 @@
       "num": 2,
       "name": "social-v2",
       "window": "01+小建",
-      "status_text": "🟢 **LIVE 引擎/後端**；/review + /app 都上線(密碼閘)；worker 暫關(不誤發 IG/FB)",
+      "status_text": "🟢 **LIVE 引擎/後端**；/app 上線(密碼閘)；**Meta 發文 token 接通**(SYSTEM_USER 永久；nicoco FB+IG、basic FB；dry-run 過)；worker 暫關待上線開關；待補 basic-IG 連結 + men's tenant",
       "status_emoji": "🟢",
       "status_tag": "live",
       "status_label": "運行中"
