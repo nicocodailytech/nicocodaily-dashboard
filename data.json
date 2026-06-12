@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-12T13:00:02.893219+08:00",
+  "generated_at": "2026-06-12T13:20:03.165579+08:00",
   "board_updated": "2026-06-05",
   "maintainer": "L1 (Windows Claude / #12 總指揮)",
   "stats": {
@@ -175,7 +175,7 @@
       "name": "小建 (VPS)",
       "role": "L2 雲端工程 · 24/7",
       "level": "L2",
-      "state": "小建：跑 #8 + #14 build；@Nicocobrain_bot 已注入小建人設 + 權限 allowlist"
+      "state": "`db.py` + `schema.sql`（4 表：activities / daily_snapshot / alerts / fetch_heartbeat）"
     },
     {
       "name": "可可",
