@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-15T15:00:02.641126+08:00",
+  "generated_at": "2026-06-15T15:20:03.304379+08:00",
   "board_updated": "2026-06-13",
   "maintainer": "L1 (Windows Claude / #12 總指揮)",
   "stats": {
@@ -175,7 +175,7 @@
       "name": "小建 (VPS)",
       "role": "L2 雲端工程 · 24/7",
       "level": "L2",
-      "state": "`db.py` + `schema.sql`（4 表：activities / daily_snapshot / alerts / fetch_heartbeat）"
+      "state": "SQLite 紀錄是 **主要產出**（資料資產、未來分析基底）"
     },
     {
       "name": "可可",
