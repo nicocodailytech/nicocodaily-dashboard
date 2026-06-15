@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-15T16:00:02.534042+08:00",
+  "generated_at": "2026-06-15T16:20:02.818415+08:00",
   "board_updated": "2026-06-13",
   "maintainer": "L1 (Windows Claude / #12 總指揮)",
   "stats": {
@@ -175,7 +175,7 @@
       "name": "小建 (VPS)",
       "role": "L2 雲端工程 · 24/7",
       "level": "L2",
-      "state": "SQLite 紀錄是 **主要產出**（資料資產、未來分析基底）"
+      "state": "現況：`tools/meta_ads_etl/etl.py:36` 寫死 `BRAIN_ROOT / \"data\" / \"meta_ads.db\"`"
     },
     {
       "name": "可可",
